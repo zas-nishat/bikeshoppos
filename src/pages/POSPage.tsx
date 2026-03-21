@@ -7,9 +7,11 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Search, Plus, Minus, Trash2, ShoppingCart, Receipt } from 'lucide-react';
-import type { PaymentType } from '@/types';
+import { Search, Plus, Minus, Trash2, ShoppingCart, Receipt, Download, Printer } from 'lucide-react';
+import type { PaymentType, Sale } from '@/types';
 import { toast } from 'sonner';
+import { downloadInvoice, printInvoice } from '@/lib/invoice';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 export default function POSPage() {
   const { bikes, customers, cart, addToCart, removeFromCart, updateCartQuantity, clearCart, addSale, addCustomer, addEMI } = useStore();
@@ -23,6 +25,8 @@ export default function POSPage() {
   const [downPayment, setDownPayment] = useState(0);
   const [newCustomerName, setNewCustomerName] = useState('');
   const [newCustomerPhone, setNewCustomerPhone] = useState('');
+  const [lastSale, setLastSale] = useState<Sale | null>(null);
+  const [invoiceOpen, setInvoiceOpen] = useState(false);
 
   const filteredBikes = bikes.filter((b) =>
     b.stock > 0 && `${b.name} ${b.brand} ${b.model}`.toLowerCase().includes(search.toLowerCase())
@@ -50,7 +54,7 @@ export default function POSPage() {
 
     if (cart.length === 0) { toast.error('Cart is empty'); return; }
 
-    addSale({
+    const saleData: Omit<Sale, 'id'> = {
       customerId: finalCustomerId,
       customerName,
       items: cart.map((c) => ({ bikeId: c.bike.id, bikeName: c.bike.name, quantity: c.quantity, unitPrice: c.bike.sellingPrice })),
@@ -61,7 +65,13 @@ export default function POSPage() {
       grandTotal,
       paymentType,
       date: new Date().toISOString(),
-    });
+    };
+
+    addSale(saleData);
+
+    const completedSale: Sale = { ...saleData, id: Math.random().toString(36).substring(2, 10) };
+    setLastSale(completedSale);
+    setInvoiceOpen(true);
 
     if (paymentType === 'emi') {
       const due = grandTotal - downPayment;
@@ -81,7 +91,9 @@ export default function POSPage() {
     setDiscount(0);
     setTax(0);
     setCustomerId('');
-    toast.success('Sale completed!');
+    setNewCustomerName('');
+    setNewCustomerPhone('');
+    toast.success('Sale completed successfully!');
   };
 
   return (
@@ -97,7 +109,7 @@ export default function POSPage() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[60vh] overflow-auto scrollbar-thin pr-1">
             {filteredBikes.map((b) => (
-              <Card key={b.id} className="shadow-sm hover:shadow-md transition-shadow cursor-pointer active:scale-[0.98]" onClick={() => addToCart(b)}>
+              <Card key={b.id} className="shadow-sm hover:shadow-md transition-shadow cursor-pointer active:scale-[0.98]" onClick={() => { addToCart(b); toast.info(`${b.name} added to cart`); }}>
                 <CardContent className="p-3">
                   <div className="flex justify-between items-start">
                     <div>
@@ -116,6 +128,7 @@ export default function POSPage() {
               <div className="col-span-2 text-center py-12 text-muted-foreground">
                 <ShoppingCart className="h-8 w-8 mx-auto mb-2 opacity-30" />
                 <p className="text-sm">No bikes available</p>
+                <p className="text-xs mt-1">Try a different search term</p>
               </div>
             )}
           </div>
@@ -131,7 +144,11 @@ export default function POSPage() {
             </CardHeader>
             <CardContent className="space-y-3">
               {cart.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-4">Add bikes to cart</p>
+                <div className="text-center py-8 text-muted-foreground">
+                  <ShoppingCart className="h-8 w-8 mx-auto mb-2 opacity-30" />
+                  <p className="text-sm">Your cart is empty</p>
+                  <p className="text-xs mt-1">Click on a bike to add it</p>
+                </div>
               ) : (
                 <div className="space-y-2 max-h-48 overflow-auto scrollbar-thin">
                   {cart.map((item) => (
@@ -148,7 +165,7 @@ export default function POSPage() {
                         <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => updateCartQuantity(item.bike.id, item.quantity + 1)}>
                           <Plus className="h-3 w-3" />
                         </Button>
-                        <Button size="icon" variant="ghost" className="h-6 w-6 text-destructive" onClick={() => removeFromCart(item.bike.id)}>
+                        <Button size="icon" variant="ghost" className="h-6 w-6 text-destructive" onClick={() => { removeFromCart(item.bike.id); toast.info('Removed from cart'); }}>
                           <Trash2 className="h-3 w-3" />
                         </Button>
                       </div>
@@ -228,6 +245,33 @@ export default function POSPage() {
           </Card>
         </div>
       </div>
+
+      {/* Invoice Dialog */}
+      <Dialog open={invoiceOpen} onOpenChange={setInvoiceOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><Receipt className="h-4 w-4" /> Sale Complete!</DialogTitle>
+          </DialogHeader>
+          {lastSale && (
+            <div className="space-y-4">
+              <div className="bg-muted/50 rounded-lg p-4 space-y-2 text-sm">
+                <div className="flex justify-between"><span className="text-muted-foreground">Customer</span><span className="font-medium">{lastSale.customerName}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Items</span><span>{lastSale.items.length}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Payment</span><span className="capitalize">{lastSale.paymentType}</span></div>
+                <div className="flex justify-between font-bold text-base border-t pt-2"><span>Total</span><span>৳{lastSale.grandTotal.toLocaleString()}</span></div>
+              </div>
+              <div className="flex gap-2">
+                <Button className="flex-1" variant="outline" onClick={() => downloadInvoice(lastSale)}>
+                  <Download className="h-4 w-4 mr-1" /> Download PDF
+                </Button>
+                <Button className="flex-1" onClick={() => printInvoice(lastSale)}>
+                  <Printer className="h-4 w-4 mr-1" /> Print
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

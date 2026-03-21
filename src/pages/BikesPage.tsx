@@ -8,7 +8,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Search, Edit2, Trash2, Bike } from 'lucide-react';
+import { ROLE_ACTIONS } from '@/types';
 import type { Bike as BikeType } from '@/types';
+import { toast } from 'sonner';
 
 function BikeForm({ bike, onSubmit, onClose }: { bike?: BikeType; onSubmit: (data: Omit<BikeType, 'id'>) => void; onClose: () => void }) {
   const [form, setForm] = useState({
@@ -39,10 +41,15 @@ function BikeForm({ bike, onSubmit, onClose }: { bike?: BikeType; onSubmit: (dat
 }
 
 export default function BikesPage() {
-  const { bikes, addBike, updateBike, deleteBike } = useStore();
+  const { bikes, addBike, updateBike, deleteBike, currentUser } = useStore();
   const [search, setSearch] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<BikeType | undefined>();
+
+  const role = currentUser?.role || 'salesman';
+  const canAdd = ROLE_ACTIONS[role].includes('add_bike');
+  const canEdit = ROLE_ACTIONS[role].includes('edit_bike');
+  const canDelete = ROLE_ACTIONS[role].includes('delete_bike');
 
   const filtered = bikes.filter((b) =>
     `${b.name} ${b.brand} ${b.model}`.toLowerCase().includes(search.toLowerCase())
@@ -51,19 +58,29 @@ export default function BikesPage() {
   return (
     <div>
       <PageHeader title="Bike Management" description={`${bikes.length} bikes in catalog`}>
-        <Dialog open={dialogOpen} onOpenChange={(o) => { setDialogOpen(o); if (!o) setEditing(undefined); }}>
-          <DialogTrigger asChild>
-            <Button size="sm"><Plus className="h-4 w-4 mr-1" />Add Bike</Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader><DialogTitle>{editing ? 'Edit' : 'Add'} Bike</DialogTitle></DialogHeader>
-            <BikeForm
-              bike={editing}
-              onSubmit={(data) => editing ? updateBike(editing.id, data) : addBike(data)}
-              onClose={() => { setDialogOpen(false); setEditing(undefined); }}
-            />
-          </DialogContent>
-        </Dialog>
+        {canAdd && (
+          <Dialog open={dialogOpen} onOpenChange={(o) => { setDialogOpen(o); if (!o) setEditing(undefined); }}>
+            <DialogTrigger asChild>
+              <Button size="sm"><Plus className="h-4 w-4 mr-1" />Add Bike</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader><DialogTitle>{editing ? 'Edit' : 'Add'} Bike</DialogTitle></DialogHeader>
+              <BikeForm
+                bike={editing}
+                onSubmit={(data) => {
+                  if (editing) {
+                    updateBike(editing.id, data);
+                    toast.success('Bike updated successfully');
+                  } else {
+                    addBike(data);
+                    toast.success('Bike added successfully');
+                  }
+                }}
+                onClose={() => { setDialogOpen(false); setEditing(undefined); }}
+              />
+            </DialogContent>
+          </Dialog>
+        )}
       </PageHeader>
 
       <div className="relative mb-4 max-w-sm">
@@ -74,7 +91,13 @@ export default function BikesPage() {
       {filtered.length === 0 ? (
         <div className="text-center py-16 text-muted-foreground">
           <Bike className="h-12 w-12 mx-auto mb-3 opacity-30" />
-          <p>No bikes found</p>
+          <p className="font-medium">No bikes found</p>
+          <p className="text-sm mt-1">{bikes.length === 0 ? 'Add your first bike to get started' : 'Try a different search term'}</p>
+          {bikes.length === 0 && canAdd && (
+            <Button size="sm" className="mt-3" onClick={() => setDialogOpen(true)}>
+              <Plus className="h-4 w-4 mr-1" /> Add First Bike
+            </Button>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -93,14 +116,20 @@ export default function BikesPage() {
                   <span>Buy: ৳{b.purchasePrice.toLocaleString()}</span>
                   <span className="font-semibold text-foreground">Sell: ৳{b.sellingPrice.toLocaleString()}</span>
                 </div>
-                <div className="flex gap-1 mt-3 pt-3 border-t">
-                  <Button size="sm" variant="ghost" className="h-7 text-xs flex-1" onClick={() => { setEditing(b); setDialogOpen(true); }}>
-                    <Edit2 className="h-3 w-3 mr-1" />Edit
-                  </Button>
-                  <Button size="sm" variant="ghost" className="h-7 text-xs text-destructive hover:text-destructive flex-1" onClick={() => deleteBike(b.id)}>
-                    <Trash2 className="h-3 w-3 mr-1" />Delete
-                  </Button>
-                </div>
+                {(canEdit || canDelete) && (
+                  <div className="flex gap-1 mt-3 pt-3 border-t">
+                    {canEdit && (
+                      <Button size="sm" variant="ghost" className="h-7 text-xs flex-1" onClick={() => { setEditing(b); setDialogOpen(true); }}>
+                        <Edit2 className="h-3 w-3 mr-1" />Edit
+                      </Button>
+                    )}
+                    {canDelete && (
+                      <Button size="sm" variant="ghost" className="h-7 text-xs text-destructive hover:text-destructive flex-1" onClick={() => { deleteBike(b.id); toast.success('Bike deleted'); }}>
+                        <Trash2 className="h-3 w-3 mr-1" />Delete
+                      </Button>
+                    )}
+                  </div>
+                )}
               </CardContent>
             </Card>
           ))}

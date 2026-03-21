@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { Bike, Customer, Sale, EMI, Expense, CartItem, UserRole } from '@/types';
+import type { Bike, Customer, Sale, EMI, Expense, CartItem, UserRole, UserAccount, StockLog } from '@/types';
 
 const generateId = () => Math.random().toString(36).substring(2, 10);
 
@@ -34,10 +34,18 @@ const seedEMIs: EMI[] = [
   { id: '1', saleId: '2', customerName: 'Fatema Begum', downPayment: 20000, monthlyAmount: 5167, duration: 12, paidAmount: 20000, dueAmount: 62000, payments: [{ date: new Date().toISOString(), amount: 20000 }] },
 ];
 
+const seedAccounts: UserAccount[] = [
+  { id: '1', name: 'Admin User', email: 'admin@bikehub.com', password: 'admin123', role: 'admin', createdAt: new Date().toISOString() },
+  { id: '2', name: 'Store Manager', email: 'manager@bikehub.com', password: 'manager123', role: 'manager', createdAt: new Date().toISOString() },
+  { id: '3', name: 'Sales Staff', email: 'sales@bikehub.com', password: 'sales123', role: 'salesman', createdAt: new Date().toISOString() },
+];
+
 interface AppState {
   // Auth
-  currentUser: { name: string; role: UserRole } | null;
-  login: (name: string, role: UserRole) => void;
+  currentUser: { id: string; name: string; role: UserRole } | null;
+  accounts: UserAccount[];
+  register: (name: string, email: string, password: string, role: UserRole) => { success: boolean; error?: string };
+  loginWithCredentials: (email: string, password: string) => { success: boolean; error?: string };
   logout: () => void;
   // Dark mode
   darkMode: boolean;
@@ -68,13 +76,35 @@ interface AppState {
   expenses: Expense[];
   addExpense: (e: Omit<Expense, 'id'>) => void;
   deleteExpense: (id: string) => void;
+  // Stock log
+  stockLogs: StockLog[];
+  addStockLog: (log: Omit<StockLog, 'id'>) => void;
 }
 
 export const useStore = create<AppState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       currentUser: null,
-      login: (name, role) => set({ currentUser: { name, role } }),
+      accounts: seedAccounts,
+      register: (name, email, password, role) => {
+        const state = get();
+        if (state.accounts.find((a) => a.email.toLowerCase() === email.toLowerCase())) {
+          return { success: false, error: 'Email already registered' };
+        }
+        if (password.length < 6) {
+          return { success: false, error: 'Password must be at least 6 characters' };
+        }
+        const account: UserAccount = { id: generateId(), name, email, password, role, createdAt: new Date().toISOString() };
+        set({ accounts: [...state.accounts, account], currentUser: { id: account.id, name, role } });
+        return { success: true };
+      },
+      loginWithCredentials: (email, password) => {
+        const state = get();
+        const account = state.accounts.find((a) => a.email.toLowerCase() === email.toLowerCase() && a.password === password);
+        if (!account) return { success: false, error: 'Invalid email or password' };
+        set({ currentUser: { id: account.id, name: account.name, role: account.role } });
+        return { success: true };
+      },
       logout: () => set({ currentUser: null }),
       darkMode: false,
       toggleDarkMode: () => set((s) => {
@@ -83,8 +113,23 @@ export const useStore = create<AppState>()(
         return { darkMode: next };
       }),
       bikes: seedBikes,
-      addBike: (bike) => set((s) => ({ bikes: [...s.bikes, { ...bike, id: generateId() }] })),
-      updateBike: (id, data) => set((s) => ({ bikes: s.bikes.map((b) => b.id === id ? { ...b, ...data } : b) })),
+      addBike: (bike) => set((s) => {
+        const newBike = { ...bike, id: generateId() };
+        return {
+          bikes: [...s.bikes, newBike],
+          stockLogs: [...s.stockLogs, { id: generateId(), bikeId: newBike.id, bikeName: newBike.name, type: 'restock' as const, quantity: newBike.stock, date: new Date().toISOString(), note: 'Initial stock' }],
+        };
+      }),
+      updateBike: (id, data) => set((s) => {
+        const old = s.bikes.find((b) => b.id === id);
+        const updated = s.bikes.map((b) => b.id === id ? { ...b, ...data } : b);
+        const newLogs = [...s.stockLogs];
+        if (old && data.stock !== undefined && data.stock !== old.stock) {
+          const diff = data.stock - old.stock;
+          newLogs.push({ id: generateId(), bikeId: id, bikeName: old.name, type: diff > 0 ? 'restock' : 'adjustment', quantity: diff, date: new Date().toISOString(), note: diff > 0 ? 'Stock added' : 'Stock adjusted' });
+        }
+        return { bikes: updated, stockLogs: newLogs };
+      }),
       deleteBike: (id) => set((s) => ({ bikes: s.bikes.filter((b) => b.id !== id) })),
       customers: seedCustomers,
       addCustomer: (c) => set((s) => ({ customers: [...s.customers, { ...c, id: generateId() }] })),
@@ -96,7 +141,11 @@ export const useStore = create<AppState>()(
           const item = s.items.find((i) => i.bikeId === b.id);
           return item ? { ...b, stock: Math.max(0, b.stock - item.quantity) } : b;
         });
-        return { sales: [...state.sales, sale], bikes: updatedBikes };
+        const newLogs = [...state.stockLogs];
+        s.items.forEach((item) => {
+          newLogs.push({ id: generateId(), bikeId: item.bikeId, bikeName: item.bikeName, type: 'sale', quantity: -item.quantity, date: new Date().toISOString(), note: `Sold to ${s.customerName}` });
+        });
+        return { sales: [...state.sales, sale], bikes: updatedBikes, stockLogs: newLogs };
       }),
       cart: [],
       addToCart: (bike) => set((s) => {
@@ -124,6 +173,8 @@ export const useStore = create<AppState>()(
       expenses: seedExpenses,
       addExpense: (e) => set((s) => ({ expenses: [...s.expenses, { ...e, id: generateId() }] })),
       deleteExpense: (id) => set((s) => ({ expenses: s.expenses.filter((e) => e.id !== id) })),
+      stockLogs: [],
+      addStockLog: (log) => set((s) => ({ stockLogs: [...s.stockLogs, { ...log, id: generateId() }] })),
     }),
     { name: 'bike-pos-store' }
   )

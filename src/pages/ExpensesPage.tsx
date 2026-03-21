@@ -8,8 +8,11 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Trash2, Wallet } from 'lucide-react';
+import { Plus, Trash2, Wallet, Download } from 'lucide-react';
+import { ROLE_ACTIONS } from '@/types';
 import type { Expense } from '@/types';
+import { toast } from 'sonner';
+import { exportExpensesExcel } from '@/lib/export';
 
 const categoryColors: Record<string, string> = {
   rent: 'bg-chart-4/10 text-chart-4',
@@ -19,9 +22,13 @@ const categoryColors: Record<string, string> = {
 };
 
 export default function ExpensesPage() {
-  const { expenses, addExpense, deleteExpense } = useStore();
+  const { expenses, addExpense, deleteExpense, currentUser } = useStore();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState({ title: '', amount: 0, category: 'other' as Expense['category'] });
+
+  const role = currentUser?.role || 'salesman';
+  const canAdd = ROLE_ACTIONS[role].includes('add_expense');
+  const canDelete = ROLE_ACTIONS[role].includes('delete_expense');
 
   const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
 
@@ -30,38 +37,57 @@ export default function ExpensesPage() {
     addExpense({ ...form, date: new Date().toISOString() });
     setForm({ title: '', amount: 0, category: 'other' });
     setDialogOpen(false);
+    toast.success('Expense added');
   };
 
   return (
     <div>
       <PageHeader title="Expenses" description={`Total: ৳${totalExpenses.toLocaleString()}`}>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild><Button size="sm"><Plus className="h-4 w-4 mr-1" />Add Expense</Button></DialogTrigger>
-          <DialogContent>
-            <DialogHeader><DialogTitle>Add Expense</DialogTitle></DialogHeader>
-            <form onSubmit={handleAdd} className="space-y-3">
-              <div><Label className="text-xs">Title</Label><Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required /></div>
-              <div><Label className="text-xs">Amount</Label><Input type="number" value={form.amount} onChange={(e) => setForm({ ...form, amount: +e.target.value })} required /></div>
-              <div>
-                <Label className="text-xs">Category</Label>
-                <Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v as Expense['category'] })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="rent">Rent</SelectItem>
-                    <SelectItem value="salary">Salary</SelectItem>
-                    <SelectItem value="maintenance">Maintenance</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button type="submit" className="w-full">Add Expense</Button>
-            </form>
-          </DialogContent>
-        </Dialog>
+        <div className="flex gap-2">
+          {expenses.length > 0 && (
+            <Button size="sm" variant="outline" onClick={() => { exportExpensesExcel(expenses); toast.success('Exported to Excel'); }}>
+              <Download className="h-4 w-4 mr-1" /> Excel
+            </Button>
+          )}
+          {canAdd && (
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+              <DialogTrigger asChild><Button size="sm"><Plus className="h-4 w-4 mr-1" />Add Expense</Button></DialogTrigger>
+              <DialogContent>
+                <DialogHeader><DialogTitle>Add Expense</DialogTitle></DialogHeader>
+                <form onSubmit={handleAdd} className="space-y-3">
+                  <div><Label className="text-xs">Title</Label><Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required /></div>
+                  <div><Label className="text-xs">Amount</Label><Input type="number" value={form.amount} onChange={(e) => setForm({ ...form, amount: +e.target.value })} required /></div>
+                  <div>
+                    <Label className="text-xs">Category</Label>
+                    <Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v as Expense['category'] })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="rent">Rent</SelectItem>
+                        <SelectItem value="salary">Salary</SelectItem>
+                        <SelectItem value="maintenance">Maintenance</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button type="submit" className="w-full">Add Expense</Button>
+                </form>
+              </DialogContent>
+            </Dialog>
+          )}
+        </div>
       </PageHeader>
 
       {expenses.length === 0 ? (
-        <div className="text-center py-16 text-muted-foreground"><Wallet className="h-12 w-12 mx-auto mb-3 opacity-30" /><p>No expenses recorded</p></div>
+        <div className="text-center py-16 text-muted-foreground">
+          <Wallet className="h-12 w-12 mx-auto mb-3 opacity-30" />
+          <p className="font-medium">No expenses recorded</p>
+          <p className="text-sm mt-1">Track your showroom expenses here</p>
+          {canAdd && (
+            <Button size="sm" className="mt-3" onClick={() => setDialogOpen(true)}>
+              <Plus className="h-4 w-4 mr-1" /> Add First Expense
+            </Button>
+          )}
+        </div>
       ) : (
         <div className="space-y-2">
           {expenses.map((e, i) => (
@@ -76,9 +102,11 @@ export default function ExpensesPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="font-bold text-sm">৳{e.amount.toLocaleString()}</span>
-                  <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => deleteExpense(e.id)}>
-                    <Trash2 className="h-3 w-3" />
-                  </Button>
+                  {canDelete && (
+                    <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => { deleteExpense(e.id); toast.success('Expense deleted'); }}>
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  )}
                 </div>
               </CardContent>
             </Card>
