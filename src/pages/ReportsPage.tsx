@@ -1,7 +1,11 @@
 import { useStore } from '@/store/useStore';
 import { PageHeader } from '@/components/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { Download, FileText } from 'lucide-react';
+import { toast } from 'sonner';
+import { exportSalesReportPDF, exportProfitLossPDF, exportSalesExcel } from '@/lib/export';
 
 const COLORS = ['hsl(349,89%,50%)', 'hsl(32,95%,52%)', 'hsl(152,60%,40%)', 'hsl(220,70%,55%)', 'hsl(280,60%,55%)'];
 
@@ -37,9 +41,30 @@ export default function ReportsPage() {
   sales.forEach((s) => { paymentBreakdown[s.paymentType] = (paymentBreakdown[s.paymentType] || 0) + s.grandTotal; });
   const paymentPie = Object.entries(paymentBreakdown).map(([name, value]) => ({ name, value }));
 
+  // Today's & monthly sales
+  const today = new Date().toDateString();
+  const thisMonth = new Date().getMonth();
+  const todaySales = sales.filter((s) => new Date(s.date).toDateString() === today);
+  const monthlySales = sales.filter((s) => new Date(s.date).getMonth() === thisMonth);
+
   return (
     <div>
-      <PageHeader title="Reports & Analytics" description="Business performance overview" />
+      <PageHeader title="Reports & Analytics" description="Business performance overview">
+        <div className="flex gap-2 flex-wrap">
+          <Button size="sm" variant="outline" onClick={() => { exportSalesReportPDF(todaySales, 'Daily Sales Report'); toast.success('Daily report exported'); }}>
+            <FileText className="h-4 w-4 mr-1" /> Daily PDF
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => { exportSalesReportPDF(monthlySales, 'Monthly Sales Report'); toast.success('Monthly report exported'); }}>
+            <FileText className="h-4 w-4 mr-1" /> Monthly PDF
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => { exportProfitLossPDF(sales, expenses, bikes); toast.success('P&L report exported'); }}>
+            <FileText className="h-4 w-4 mr-1" /> P&L PDF
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => { exportSalesExcel(sales); toast.success('Exported to Excel'); }}>
+            <Download className="h-4 w-4 mr-1" /> Excel
+          </Button>
+        </div>
+      </PageHeader>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         {[
@@ -60,7 +85,12 @@ export default function ReportsPage() {
         <Card className="shadow-sm animate-fade-in" style={{ animationDelay: '240ms' }}>
           <CardHeader className="pb-2"><CardTitle className="text-sm">Top Selling Bikes</CardTitle></CardHeader>
           <CardContent>
-            {topBikes.length === 0 ? <p className="text-sm text-muted-foreground text-center py-8">No sales data</p> : (
+            {topBikes.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <p className="text-sm">No sales data yet</p>
+                <p className="text-xs mt-1">Complete a sale to see analytics</p>
+              </div>
+            ) : (
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={topBikes} layout="vertical">
@@ -79,7 +109,12 @@ export default function ReportsPage() {
         <Card className="shadow-sm animate-fade-in" style={{ animationDelay: '320ms' }}>
           <CardHeader className="pb-2"><CardTitle className="text-sm">Expense Breakdown</CardTitle></CardHeader>
           <CardContent>
-            {expensePie.length === 0 ? <p className="text-sm text-muted-foreground text-center py-8">No expenses</p> : (
+            {expensePie.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <p className="text-sm">No expenses recorded</p>
+                <p className="text-xs mt-1">Add expenses to see the breakdown</p>
+              </div>
+            ) : (
               <div className="h-64 flex items-center justify-center">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -97,7 +132,11 @@ export default function ReportsPage() {
         <Card className="shadow-sm animate-fade-in" style={{ animationDelay: '400ms' }}>
           <CardHeader className="pb-2"><CardTitle className="text-sm">Payment Methods</CardTitle></CardHeader>
           <CardContent>
-            {paymentPie.length === 0 ? <p className="text-sm text-muted-foreground text-center py-8">No sales</p> : (
+            {paymentPie.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <p className="text-sm">No sales data</p>
+              </div>
+            ) : (
               <div className="h-64 flex items-center justify-center">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>

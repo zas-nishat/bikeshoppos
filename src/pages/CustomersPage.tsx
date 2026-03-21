@@ -8,6 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Plus, Search, Users, Edit2 } from 'lucide-react';
 import type { Customer } from '@/types';
+import { toast } from 'sonner';
 
 function CustomerForm({ customer, onSubmit, onClose }: { customer?: Customer; onSubmit: (data: Omit<Customer, 'id'>) => void; onClose: () => void }) {
   const [form, setForm] = useState({
@@ -50,7 +51,15 @@ export default function CustomersPage() {
             <DialogHeader><DialogTitle>{editing ? 'Edit' : 'Add'} Customer</DialogTitle></DialogHeader>
             <CustomerForm
               customer={editing}
-              onSubmit={(data) => editing ? updateCustomer(editing.id, data) : addCustomer(data)}
+              onSubmit={(data) => {
+                if (editing) {
+                  updateCustomer(editing.id, data);
+                  toast.success('Customer updated');
+                } else {
+                  addCustomer(data);
+                  toast.success('Customer added');
+                }
+              }}
               onClose={() => { setDialogOpen(false); setEditing(undefined); }}
             />
           </DialogContent>
@@ -64,7 +73,14 @@ export default function CustomersPage() {
 
       {filtered.length === 0 ? (
         <div className="text-center py-16 text-muted-foreground">
-          <Users className="h-12 w-12 mx-auto mb-3 opacity-30" /><p>No customers found</p>
+          <Users className="h-12 w-12 mx-auto mb-3 opacity-30" />
+          <p className="font-medium">No customers found</p>
+          <p className="text-sm mt-1">{customers.length === 0 ? 'Add your first customer' : 'Try a different search'}</p>
+          {customers.length === 0 && (
+            <Button size="sm" className="mt-3" onClick={() => setDialogOpen(true)}>
+              <Plus className="h-4 w-4 mr-1" /> Add First Customer
+            </Button>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

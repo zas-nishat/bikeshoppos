@@ -1,7 +1,7 @@
 import { LayoutDashboard, Bike, Users, ShoppingCart, Receipt, Package, Wallet, BarChart3, LogOut, Moon, Sun } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
-import { useLocation } from 'react-router-dom';
 import { useStore } from '@/store/useStore';
+import { ROLE_PERMISSIONS } from '@/types';
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
   SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarFooter, useSidebar,
@@ -9,21 +9,23 @@ import {
 import { Button } from '@/components/ui/button';
 
 const navItems = [
-  { title: 'Dashboard', url: '/', icon: LayoutDashboard },
-  { title: 'POS / Sales', url: '/pos', icon: ShoppingCart },
-  { title: 'Bikes', url: '/bikes', icon: Bike },
-  { title: 'Customers', url: '/customers', icon: Users },
-  { title: 'EMI Tracking', url: '/emi', icon: Receipt },
-  { title: 'Inventory', url: '/inventory', icon: Package },
-  { title: 'Expenses', url: '/expenses', icon: Wallet },
-  { title: 'Reports', url: '/reports', icon: BarChart3 },
+  { title: 'Dashboard', url: '/', icon: LayoutDashboard, key: 'dashboard' },
+  { title: 'POS / Sales', url: '/pos', icon: ShoppingCart, key: 'pos' },
+  { title: 'Bikes', url: '/bikes', icon: Bike, key: 'bikes' },
+  { title: 'Customers', url: '/customers', icon: Users, key: 'customers' },
+  { title: 'EMI Tracking', url: '/emi', icon: Receipt, key: 'emi' },
+  { title: 'Inventory', url: '/inventory', icon: Package, key: 'inventory' },
+  { title: 'Expenses', url: '/expenses', icon: Wallet, key: 'expenses' },
+  { title: 'Reports', url: '/reports', icon: BarChart3, key: 'reports' },
 ];
 
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === 'collapsed';
-  const location = useLocation();
   const { currentUser, logout, darkMode, toggleDarkMode } = useStore();
+
+  const allowedPages = currentUser ? ROLE_PERMISSIONS[currentUser.role] : [];
+  const visibleItems = navItems.filter((item) => allowedPages.includes(item.key));
 
   return (
     <Sidebar collapsible="icon" className="border-r-0">
@@ -43,7 +45,7 @@ export function AppSidebar() {
           <SidebarGroupLabel className="text-[10px] uppercase tracking-widest">Menu</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {navItems.map((item) => (
+              {visibleItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
                     <NavLink

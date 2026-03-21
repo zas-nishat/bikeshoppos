@@ -61,3 +61,35 @@ export interface Expense {
 }
 
 export type UserRole = 'admin' | 'manager' | 'salesman';
+
+export interface UserAccount {
+  id: string;
+  name: string;
+  email: string;
+  password: string;
+  role: UserRole;
+  createdAt: string;
+}
+
+export interface StockLog {
+  id: string;
+  bikeId: string;
+  bikeName: string;
+  type: 'sale' | 'restock' | 'adjustment';
+  quantity: number;
+  date: string;
+  note: string;
+}
+
+// Role-based permissions
+export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
+  admin: ['dashboard', 'pos', 'bikes', 'customers', 'emi', 'inventory', 'expenses', 'reports'],
+  manager: ['dashboard', 'pos', 'bikes', 'customers', 'emi', 'inventory', 'expenses', 'reports'],
+  salesman: ['dashboard', 'pos', 'customers', 'emi'],
+};
+
+export const ROLE_ACTIONS: Record<UserRole, string[]> = {
+  admin: ['add_bike', 'edit_bike', 'delete_bike', 'add_expense', 'delete_expense', 'view_reports', 'manage_inventory'],
+  manager: ['add_bike', 'edit_bike', 'add_expense', 'view_reports', 'manage_inventory'],
+  salesman: ['create_sale', 'add_customer'],
+};
