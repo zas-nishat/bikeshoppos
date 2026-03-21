@@ -1,0 +1,117 @@
+import { useStore } from '@/store/useStore';
+import { PageHeader } from '@/components/PageHeader';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+
+const COLORS = ['hsl(349,89%,50%)', 'hsl(32,95%,52%)', 'hsl(152,60%,40%)', 'hsl(220,70%,55%)', 'hsl(280,60%,55%)'];
+
+export default function ReportsPage() {
+  const { sales, bikes, expenses } = useStore();
+
+  const totalRevenue = sales.reduce((s, x) => s + x.grandTotal, 0);
+  const totalCost = sales.reduce((s, x) => {
+    return s + x.items.reduce((is, item) => {
+      const bike = bikes.find((b) => b.id === item.bikeId);
+      return is + (bike ? bike.purchasePrice * item.quantity : 0);
+    }, 0);
+  }, 0);
+  const totalExpenses = expenses.reduce((s, e) => s + e.amount, 0);
+  const profit = totalRevenue - totalCost - totalExpenses;
+
+  // Top selling bikes
+  const bikeSalesMap: Record<string, { name: string; count: number; revenue: number }> = {};
+  sales.forEach((s) => s.items.forEach((item) => {
+    if (!bikeSalesMap[item.bikeId]) bikeSalesMap[item.bikeId] = { name: item.bikeName, count: 0, revenue: 0 };
+    bikeSalesMap[item.bikeId].count += item.quantity;
+    bikeSalesMap[item.bikeId].revenue += item.unitPrice * item.quantity;
+  }));
+  const topBikes = Object.values(bikeSalesMap).sort((a, b) => b.count - a.count).slice(0, 5);
+
+  // Expense breakdown
+  const expenseByCategory: Record<string, number> = {};
+  expenses.forEach((e) => { expenseByCategory[e.category] = (expenseByCategory[e.category] || 0) + e.amount; });
+  const expensePie = Object.entries(expenseByCategory).map(([name, value]) => ({ name, value }));
+
+  // Payment type breakdown
+  const paymentBreakdown: Record<string, number> = {};
+  sales.forEach((s) => { paymentBreakdown[s.paymentType] = (paymentBreakdown[s.paymentType] || 0) + s.grandTotal; });
+  const paymentPie = Object.entries(paymentBreakdown).map(([name, value]) => ({ name, value }));
+
+  return (
+    <div>
+      <PageHeader title="Reports & Analytics" description="Business performance overview" />
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        {[
+          { label: 'Total Revenue', value: totalRevenue, color: 'text-success' },
+          { label: 'Total Costs', value: totalCost + totalExpenses, color: 'text-destructive' },
+          { label: 'Net Profit', value: profit, color: profit >= 0 ? 'text-success' : 'text-destructive' },
+        ].map((item, i) => (
+          <Card key={item.label} className="shadow-sm animate-fade-in" style={{ animationDelay: `${i * 80}ms` }}>
+            <CardContent className="p-4 text-center">
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">{item.label}</p>
+              <p className={`text-2xl font-bold tabular-nums ${item.color}`}>৳{item.value.toLocaleString()}</p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <Card className="shadow-sm animate-fade-in" style={{ animationDelay: '240ms' }}>
+          <CardHeader className="pb-2"><CardTitle className="text-sm">Top Selling Bikes</CardTitle></CardHeader>
+          <CardContent>
+            {topBikes.length === 0 ? <p className="text-sm text-muted-foreground text-center py-8">No sales data</p> : (
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={topBikes} layout="vertical">
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                    <XAxis type="number" tick={{ fontSize: 11 }} />
+                    <YAxis dataKey="name" type="category" width={120} tick={{ fontSize: 11 }} />
+                    <Tooltip />
+                    <Bar dataKey="count" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-sm animate-fade-in" style={{ animationDelay: '320ms' }}>
+          <CardHeader className="pb-2"><CardTitle className="text-sm">Expense Breakdown</CardTitle></CardHeader>
+          <CardContent>
+            {expensePie.length === 0 ? <p className="text-sm text-muted-foreground text-center py-8">No expenses</p> : (
+              <div className="h-64 flex items-center justify-center">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={expensePie} cx="50%" cy="50%" outerRadius={80} dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false}>
+                      {expensePie.map((_, idx) => <Cell key={idx} fill={COLORS[idx % COLORS.length]} />)}
+                    </Pie>
+                    <Tooltip formatter={(v: number) => `৳${v.toLocaleString()}`} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-sm animate-fade-in" style={{ animationDelay: '400ms' }}>
+          <CardHeader className="pb-2"><CardTitle className="text-sm">Payment Methods</CardTitle></CardHeader>
+          <CardContent>
+            {paymentPie.length === 0 ? <p className="text-sm text-muted-foreground text-center py-8">No sales</p> : (
+              <div className="h-64 flex items-center justify-center">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={paymentPie} cx="50%" cy="50%" outerRadius={80} dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false}>
+                      {paymentPie.map((_, idx) => <Cell key={idx} fill={COLORS[idx % COLORS.length]} />)}
+                    </Pie>
+                    <Tooltip formatter={(v: number) => `৳${v.toLocaleString()}`} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
