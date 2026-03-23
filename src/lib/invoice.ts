@@ -66,7 +66,9 @@ export async function generateInvoicePDF(sale: Sale) {
   doc.setFont('helvetica', 'normal');
   y += 8;
   sale.items.forEach((item) => {
-    doc.text(item.bikeName, 14, y);
+    // We print brand, model, engine CC, color, and standard name fallback.
+    const bikeStr = item.brand ? `${item.brand} ${item.model} ${item.engineCC}cc (${item.color})` : item.bikeName;
+    doc.text(bikeStr, 14, y);
     doc.text(String(item.quantity), 110, y);
     doc.text(`৳${item.unitPrice.toLocaleString()}`, 130, y);
     doc.text(`৳${(item.unitPrice * item.quantity).toLocaleString()}`, 160, y);
@@ -96,8 +98,19 @@ export async function generateInvoicePDF(sale: Sale) {
   doc.text(`Grand Total:`, 125, y);
   doc.text(`৳${sale.grandTotal.toLocaleString()}`, 160, y);
 
-  // Footer
+  // Signatures
+  y += 30;
+  doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
+  
+  doc.setDrawColor(150);
+  doc.line(14, y, 60, y);
+  doc.text('Customer Signature', 18, y + 5);
+
+  doc.line(w - 60, y, w - 14, y);
+  doc.text('Authorized Signature', w - 55, y + 5);
+
+  // Footer
   doc.setFontSize(8);
   doc.text('Thank you for your purchase!', w / 2, y + 20, { align: 'center' });
   doc.text('BikeHub POS - Powered by technology', w / 2, y + 26, { align: 'center' });

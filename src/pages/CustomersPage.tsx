@@ -9,11 +9,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Plus, Search, Users, Edit2 } from 'lucide-react';
 import type { Customer } from '@/types';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 
 function CustomerForm({ customer, onSubmit, onClose }: { customer?: Customer; onSubmit: (data: Omit<Customer, 'id'>) => void; onClose: () => void }) {
   const [form, setForm] = useState({
     name: customer?.name || '', phone: customer?.phone || '',
     address: customer?.address || '', nid: customer?.nid || '',
+    email: customer?.email || '', drivingLicense: customer?.drivingLicense || '',
+    alternatePhone: customer?.alternatePhone || ''
   });
 
   return (
@@ -21,7 +24,10 @@ function CustomerForm({ customer, onSubmit, onClose }: { customer?: Customer; on
       <div><Label className="text-xs">Name</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required /></div>
       <div><Label className="text-xs">Phone</Label><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} required /></div>
       <div><Label className="text-xs">Address</Label><Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} /></div>
+      <div><Label className="text-xs">Email</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
+      <div><Label className="text-xs">Alternate Phone</Label><Input value={form.alternatePhone} onChange={(e) => setForm({ ...form, alternatePhone: e.target.value })} /></div>
       <div><Label className="text-xs">NID (Optional)</Label><Input value={form.nid} onChange={(e) => setForm({ ...form, nid: e.target.value })} /></div>
+      <div><Label className="text-xs">Driving License</Label><Input value={form.drivingLicense} onChange={(e) => setForm({ ...form, drivingLicense: e.target.value })} /></div>
       <div className="flex justify-end gap-2 pt-2">
         <Button type="button" variant="outline" size="sm" onClick={onClose}>Cancel</Button>
         <Button type="submit" size="sm">{customer ? 'Update' : 'Add'} Customer</Button>
@@ -32,6 +38,7 @@ function CustomerForm({ customer, onSubmit, onClose }: { customer?: Customer; on
 
 export default function CustomersPage() {
   const { customers, addCustomer, updateCustomer } = useStore();
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Customer | undefined>();
@@ -45,24 +52,19 @@ export default function CustomersPage() {
   return (
     <div>
       <PageHeader title="Customers" description={`${customers.length} registered customers`}>
+        <Button size="sm" onClick={() => navigate('/new-customer')}>
+          <Plus className="h-4 w-4 mr-1" />Add Customer
+        </Button>
         <Dialog open={dialogOpen} onOpenChange={(o) => { setDialogOpen(o); if (!o) setEditing(undefined); }}>
-          <DialogTrigger asChild>
-            <Button size="sm"><Plus className="h-4 w-4 mr-1" />Add Customer</Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader><DialogTitle>{editing ? 'Edit' : 'Add'} Customer</DialogTitle></DialogHeader>
+          <DialogContent className="max-h-[90vh] overflow-y-auto">
+            <DialogHeader><DialogTitle>Edit Customer</DialogTitle></DialogHeader>
             <CustomerForm
               customer={editing}
               onSubmit={(data) => {
                 if (editing) {
                   setPendingData(data);
                   setUpdateConfirmOpen(true);
-                  setDialogOpen(false); // Close edit dialog but keep editing state for confirm dialog
-                } else {
-                  addCustomer(data);
-                  toast.success('Customer added');
                   setDialogOpen(false);
-                  setEditing(undefined);
                 }
               }}
               onClose={() => { setDialogOpen(false); setEditing(undefined); setPendingData(null); }}
@@ -82,7 +84,7 @@ export default function CustomersPage() {
           <p className="font-medium">No customers found</p>
           <p className="text-sm mt-1">{customers.length === 0 ? 'Add your first customer' : 'Try a different search'}</p>
           {customers.length === 0 && (
-            <Button size="sm" className="mt-3" onClick={() => setDialogOpen(true)}>
+            <Button size="sm" className="mt-3" onClick={() => navigate('/new-customer')}>
               <Plus className="h-4 w-4 mr-1" /> Add First Customer
             </Button>
           )}

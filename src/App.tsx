@@ -11,6 +11,7 @@ import Dashboard from "./pages/Dashboard";
 import POSPage from "./pages/POSPage";
 import BikesPage from "./pages/BikesPage";
 import CustomersPage from "./pages/CustomersPage";
+import NewCustomerPage from "./pages/NewCustomerPage";
 import EMIPage from "./pages/EMIPage";
 import InventoryPage from "./pages/InventoryPage";
 import ExpensesPage from "./pages/ExpensesPage";
@@ -46,6 +47,7 @@ function AppContent() {
         <Route path="/sell-bikes" element={<ProtectedRoute page="pos"><POSPage /></ProtectedRoute>} />
         <Route path="/bikes" element={<ProtectedRoute page="bikes"><BikesPage /></ProtectedRoute>} />
         <Route path="/customers" element={<ProtectedRoute page="customers"><CustomersPage /></ProtectedRoute>} />
+        <Route path="/new-customer" element={<ProtectedRoute page="customers"><NewCustomerPage /></ProtectedRoute>} />
         <Route path="/emi" element={<ProtectedRoute page="emi"><EMIPage /></ProtectedRoute>} />
         <Route path="/inventory" element={<ProtectedRoute page="inventory"><InventoryPage /></ProtectedRoute>} />
         <Route path="/expenses" element={<ProtectedRoute page="expenses"><ExpensesPage /></ProtectedRoute>} />

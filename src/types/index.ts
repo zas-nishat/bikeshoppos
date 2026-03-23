@@ -17,6 +17,9 @@ export interface Customer {
   phone: string;
   address: string;
   nid?: string;
+  email?: string;
+  drivingLicense?: string;
+  alternatePhone?: string;
 }
 
 export interface CartItem {
@@ -30,7 +33,16 @@ export interface Sale {
   id: string;
   customerId: string;
   customerName: string;
-  items: { bikeId: string; bikeName: string; quantity: number; unitPrice: number }[];
+  items: { 
+    bikeId: string; 
+    bikeName: string; 
+    quantity: number; 
+    unitPrice: number;
+    brand: string;
+    model: string;
+    engineCC: number;
+    color: string;
+  }[];
   totalPrice: number;
   discount: number;
   discountType: 'fixed' | 'percentage';

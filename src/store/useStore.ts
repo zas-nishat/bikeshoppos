@@ -21,8 +21,8 @@ const seedCustomers: Customer[] = [
 ];
 
 const seedSales: Sale[] = [
-  { id: '1', customerId: '1', customerName: 'Rahim Ahmed', items: [{ bikeId: '2', bikeName: 'Honda CB Hornet', quantity: 1, unitPrice: 195000 }], totalPrice: 195000, discount: 5000, discountType: 'fixed', tax: 0, grandTotal: 190000, paymentType: 'cash', date: new Date().toISOString() },
-  { id: '2', customerId: '3', customerName: 'Fatema Begum', items: [{ bikeId: '6', bikeName: 'Hero Splendor Plus', quantity: 1, unitPrice: 82000 }], totalPrice: 82000, discount: 0, discountType: 'fixed', tax: 0, grandTotal: 82000, paymentType: 'emi', date: new Date(Date.now() - 86400000).toISOString() },
+  { id: '1', customerId: '1', customerName: 'Rahim Ahmed', items: [{ bikeId: '2', bikeName: 'Honda CB Hornet', quantity: 1, unitPrice: 195000, brand: 'Honda', model: 'CB Hornet 2.0', engineCC: 184, color: 'Matte Black' }], totalPrice: 195000, discount: 5000, discountType: 'fixed', tax: 0, grandTotal: 190000, paymentType: 'cash', date: new Date().toISOString() },
+  { id: '2', customerId: '3', customerName: 'Fatema Begum', items: [{ bikeId: '6', bikeName: 'Hero Splendor Plus', quantity: 1, unitPrice: 82000, brand: 'Hero', model: 'Splendor Plus', engineCC: 97, color: 'Black' }], totalPrice: 82000, discount: 0, discountType: 'fixed', tax: 0, grandTotal: 82000, paymentType: 'emi', date: new Date(Date.now() - 86400000).toISOString() },
 ];
 
 const seedExpenses: Expense[] = [

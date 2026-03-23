@@ -10,11 +10,13 @@ import { Badge } from '@/components/ui/badge';
 import { Search, Plus, Minus, Trash2, ShoppingCart, Receipt, Download, Printer } from 'lucide-react';
 import type { PaymentType, Sale } from '@/types';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 import { downloadInvoice, printInvoice } from '@/lib/invoice';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { formatDateTime } from '@/lib/utils';
 
 export default function POSPage() {
+  const navigate = useNavigate();
   const { bikes, customers, cart, addToCart, removeFromCart, updateCartQuantity, clearCart, addSale, addCustomer, addEMI, currentUser, accounts } = useStore();
   const [search, setSearch] = useState('');
   const [customerId, setCustomerId] = useState('');
@@ -40,8 +42,8 @@ export default function POSPage() {
   const grandTotal = subtotal - discountAmount + taxAmount;
 
   const handleCheckout = () => {
-    if (!customerId && (!newCustomerName || !newCustomerPhone)) {
-      toast.error('Please select or add a customer');
+    if (!customerId) {
+      toast.error('Please select a customer or create a new one');
       return;
     }
     if (cart.length === 0) {
@@ -55,15 +57,8 @@ export default function POSPage() {
     let finalCustomerId = customerId;
     let customerName = '';
 
-    if (!finalCustomerId && newCustomerName && newCustomerPhone) {
-      const newId = Math.random().toString(36).substring(2, 10);
-      addCustomer({ name: newCustomerName, phone: newCustomerPhone, address: '' });
-      finalCustomerId = newId;
-      customerName = newCustomerName;
-    } else {
-      const c = customers.find((c) => c.id === finalCustomerId);
-      if (c) customerName = c.name;
-    }
+    const c = customers.find((c) => c.id === finalCustomerId);
+    if (c) customerName = c.name;
 
     const loggedInUser = accounts.find((a) => a.id === currentUser?.id);
     const soldBy = loggedInUser ? loggedInUser.name : 'Unknown';
@@ -75,7 +70,16 @@ export default function POSPage() {
     const saleData: Omit<Sale, 'id'> = {
       customerId: finalCustomerId,
       customerName,
-      items: cart.map((c) => ({ bikeId: c.bike.id, bikeName: c.bike.name, quantity: c.quantity, unitPrice: c.bike.sellingPrice })),
+      items: cart.map((c) => ({ 
+        bikeId: c.bike.id, 
+        bikeName: c.bike.name, 
+        quantity: c.quantity, 
+        unitPrice: c.bike.sellingPrice,
+        brand: c.bike.brand,
+        model: c.bike.model,
+        engineCC: c.bike.engineCC,
+        color: c.bike.color
+      })),
       totalPrice: subtotal,
       discount: discountAmount,
       discountType,
@@ -196,22 +200,18 @@ export default function POSPage() {
               )}
 
               <div className="border-t pt-3 space-y-2">
-                <div>
-                  <Label className="text-xs">Customer</Label>
-                  <Select value={customerId} onValueChange={setCustomerId}>
-                    <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select customer" /></SelectTrigger>
-                    <SelectContent>
-                      {customers.map((c) => <SelectItem key={c.id} value={c.id}>{c.name} ({c.phone})</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {!customerId && (
-                  <div className="grid grid-cols-2 gap-2">
-                    <div><Label className="text-[10px]">New Name</Label><Input className="h-7 text-xs" value={newCustomerName} onChange={(e) => setNewCustomerName(e.target.value)} /></div>
-                    <div><Label className="text-[10px]">Phone</Label><Input className="h-7 text-xs" value={newCustomerPhone} onChange={(e) => setNewCustomerPhone(e.target.value)} /></div>
+                <div className="flex gap-2 items-end">
+                  <div className="flex-1">
+                    <Label className="text-xs">Customer</Label>
+                    <Select value={customerId} onValueChange={setCustomerId}>
+                      <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select customer" /></SelectTrigger>
+                      <SelectContent>
+                        {customers.map((c) => <SelectItem key={c.id} value={c.id}>{c.name} ({c.phone})</SelectItem>)}
+                      </SelectContent>
+                    </Select>
                   </div>
-                )}
+                  <Button variant="outline" size="sm" className="h-8" onClick={() => navigate('/new-customer')}>New Customer</Button>
+                </div>
 
                 <div className="grid grid-cols-2 gap-2">
                   <div>
