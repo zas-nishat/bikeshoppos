@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Search, Plus, Minus, Trash2, ShoppingCart, Receipt, Download, Printer } from 'lucide-react';
+import { Search, Plus, Minus, Trash2, ShoppingCart, Receipt, Download, Printer, Loader2 } from 'lucide-react';
 import type { PaymentType, Sale } from '@/types';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
@@ -31,6 +31,7 @@ export default function POSPage() {
   const [lastSale, setLastSale] = useState<Sale | null>(null);
   const [invoiceOpen, setInvoiceOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const filteredBikes = bikes.filter((b) =>
     b.stock > 0 && `${b.name} ${b.brand} ${b.model}`.toLowerCase().includes(search.toLowerCase())
@@ -54,6 +55,7 @@ export default function POSPage() {
   };
 
   const finalizeSale = async () => {
+    setIsSubmitting(true);
     let finalCustomerId = customerId;
     let customerName = '';
     let customerPhone = '';
@@ -73,6 +75,8 @@ export default function POSPage() {
     const soldByPhone = loggedInUser?.phone || '';
 
     const saleDateIso = new Date().toISOString();
+
+    await new Promise(resolve => setTimeout(resolve, 3000));
 
     const saleData: Omit<Sale, 'id'> = {
       customerId: finalCustomerId,
@@ -128,6 +132,7 @@ export default function POSPage() {
     setCustomerId('');
     setNewCustomerName('');
     setNewCustomerPhone('');
+    setIsSubmitting(false);
     toast.success('Sale completed successfully!');
   };
 
@@ -316,8 +321,14 @@ export default function POSPage() {
             Are you sure you want to finalize this sale? This action will update inventory and record the transaction.
           </div>
           <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setConfirmOpen(false)}>No, Cancel</Button>
-            <Button onClick={finalizeSale}>Yes, Proceed</Button>
+            <Button variant="outline" onClick={() => setConfirmOpen(false)} disabled={isSubmitting}>No, Cancel</Button>
+            <Button onClick={finalizeSale} disabled={isSubmitting}>
+              {isSubmitting ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Processing...</>
+              ) : (
+                "Yes, Proceed"
+              )}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
