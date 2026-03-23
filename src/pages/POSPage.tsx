@@ -27,7 +27,6 @@ export default function POSPage() {
   const [newCustomerPhone, setNewCustomerPhone] = useState('');
   const [lastSale, setLastSale] = useState<Sale | null>(null);
   const [invoiceOpen, setInvoiceOpen] = useState(false);
-  const [saleDate, setSaleDate] = useState(new Date().toISOString().split('T')[0]);
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   const filteredBikes = bikes.filter((b) =>
@@ -70,7 +69,7 @@ export default function POSPage() {
     const soldByPhone = loggedInUser ? loggedInUser.phone : '';
 
     const completedSaleId = Math.random().toString(36).substring(2, 10);
-    const saleDateIso = new Date(saleDate).toISOString();
+    const saleDateIso = new Date().toISOString();
 
     const saleData: Omit<Sale, 'id'> = {
       customerId: finalCustomerId,
@@ -240,11 +239,6 @@ export default function POSPage() {
                       <SelectItem value="emi">EMI</SelectItem>
                     </SelectContent>
                   </Select>
-                </div>
-                
-                <div>
-                  <Label className="text-xs">Sale Date</Label>
-                  <Input type="date" className="h-8 text-xs" value={saleDate} onChange={(e) => setSaleDate(e.target.value)} />
                 </div>
 
                 {paymentType === 'emi' && (

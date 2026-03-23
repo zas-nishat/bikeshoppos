@@ -17,7 +17,7 @@ function CustomerForm({ customer, onSubmit, onClose }: { customer?: Customer; on
   });
 
   return (
-    <form onSubmit={(e) => { e.preventDefault(); onSubmit(form); onClose(); }} className="space-y-3">
+    <form onSubmit={(e) => { e.preventDefault(); onSubmit(form); }} className="space-y-3">
       <div><Label className="text-xs">Name</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required /></div>
       <div><Label className="text-xs">Phone</Label><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} required /></div>
       <div><Label className="text-xs">Address</Label><Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} /></div>
@@ -57,12 +57,15 @@ export default function CustomersPage() {
                 if (editing) {
                   setPendingData(data);
                   setUpdateConfirmOpen(true);
+                  setDialogOpen(false); // Close edit dialog but keep editing state for confirm dialog
                 } else {
                   addCustomer(data);
                   toast.success('Customer added');
+                  setDialogOpen(false);
+                  setEditing(undefined);
                 }
               }}
-              onClose={() => { setDialogOpen(false); setEditing(undefined); }}
+              onClose={() => { setDialogOpen(false); setEditing(undefined); setPendingData(null); }}
             />
           </DialogContent>
         </Dialog>
@@ -106,7 +109,13 @@ export default function CustomersPage() {
         </div>
       )}
 
-      <Dialog open={updateConfirmOpen} onOpenChange={setUpdateConfirmOpen}>
+      <Dialog open={updateConfirmOpen} onOpenChange={(o) => {
+        setUpdateConfirmOpen(o);
+        if (!o) {
+          setEditing(undefined);
+          setPendingData(null);
+        }
+      }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Update Customer</DialogTitle>
@@ -125,9 +134,6 @@ export default function CustomersPage() {
                   updateCustomer(editing.id, pendingData);
                   toast.success('Customer updated successfully');
                   setUpdateConfirmOpen(false);
-                  setDialogOpen(false);
-                  setEditing(undefined);
-                  setPendingData(null);
                 }
               }}
             >
