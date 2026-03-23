@@ -31,18 +31,23 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Trash2, Plus } from 'lucide-react';
+import { Trash2, Plus, Edit2 } from 'lucide-react';
 import type { UserRole } from '@/types';
 
 export default function UsersPage() {
-    const { currentUser, accounts, register, deleteUser } = useStore();
+    const { currentUser, accounts, register, deleteUser, updateUser } = useStore();
     const [newName, setNewName] = useState('');
     const [newEmail, setNewEmail] = useState('');
     const [newPassword, setNewPassword] = useState('');
+    const [newPhone, setNewPhone] = useState('');
     const [newRole, setNewRole] = useState<UserRole>('salesman');
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-    const [userToDelete, setUserToDelete] = useState<{ id: string; name: string } | null>(null);
+    const [userToDelete, setUserToDelete] = useState<{ id: string; name: string; role: UserRole } | null>(null);
+    const [editDialogOpen, setEditDialogOpen] = useState(false);
+    const [editName, setEditName] = useState('');
+    const [editPhone, setEditPhone] = useState('');
+    const [editPassword, setEditPassword] = useState('');
 
     // Only admin can access this page
     if (currentUser?.role !== 'admin') {
@@ -75,18 +80,24 @@ export default function UsersPage() {
             return;
         }
 
+        if (!newPhone.trim()) {
+            toast.error('Phone is required');
+            return;
+        }
+
         if (newPassword.length < 6) {
             toast.error('Password must be at least 6 characters');
             return;
         }
 
-        const result = register(newName, newEmail, newPassword, newRole);
+        const result = register(newName, newEmail, newPassword, newPhone, newRole);
 
         if (result.success) {
             toast.success(`User "${newName}" created successfully`);
             setNewName('');
             setNewEmail('');
             setNewPassword('');
+            setNewPhone('');
             setNewRole('salesman');
             setIsDialogOpen(false);
         } else {
@@ -104,6 +115,58 @@ export default function UsersPage() {
             } else {
                 toast.error(result.error || 'Failed to delete user');
             }
+        }
+    };
+
+    const openEditDialog = () => {
+        if (currentUser) {
+            const user = accounts.find(a => a.id === currentUser.id);
+            if (user) {
+                setEditName(user.name);
+                setEditPhone(user.phone);
+                setEditPassword('');
+                setEditDialogOpen(true);
+            }
+        }
+    };
+
+    const handleUpdateProfile = (e: React.FormEvent) => {
+        e.preventDefault();
+
+        if (!editName.trim()) {
+            toast.error('Name is required');
+            return;
+        }
+
+        if (!editPhone.trim()) {
+            toast.error('Phone is required');
+            return;
+        }
+
+        if (editPassword && editPassword.length < 6) {
+            toast.error('Password must be at least 6 characters');
+            return;
+        }
+
+        if (!currentUser) {
+            toast.error('User not found');
+            return;
+        }
+
+        const result = updateUser(currentUser.id, {
+            name: editName,
+            phone: editPhone,
+            password: editPassword || undefined,
+        });
+
+        if (result.success) {
+            toast.success('Profile updated successfully');
+            setEditDialogOpen(false);
+            setEditName('');
+            setEditPhone('');
+            setEditPassword('');
+        } else {
+            toast.error(result.error || 'Failed to update profile');
         }
     };
 
@@ -155,6 +218,17 @@ export default function UsersPage() {
                                     />
                                 </div>
                                 <div className="space-y-1.5">
+                                    <Label htmlFor="newPhone" className="text-xs">Phone</Label>
+                                    <Input
+                                        id="newPhone"
+                                        type="tel"
+                                        value={newPhone}
+                                        onChange={(e) => setNewPhone(e.target.value)}
+                                        placeholder="01700000000"
+                                        required
+                                    />
+                                </div>
+                                <div className="space-y-1.5">
                                     <Label htmlFor="newPassword" className="text-xs">Password</Label>
                                     <Input
                                         id="newPassword"
@@ -195,9 +269,10 @@ export default function UsersPage() {
                                 <TableRow>
                                     <TableHead>Name</TableHead>
                                     <TableHead>Email</TableHead>
+                                    <TableHead>Phone</TableHead>
                                     <TableHead>Role</TableHead>
                                     <TableHead>Created</TableHead>
-                                    <TableHead className="text-right">Action</TableHead>
+                                    <TableHead className="text-right">Actions</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -205,6 +280,7 @@ export default function UsersPage() {
                                     <TableRow key={account.id}>
                                         <TableCell className="font-medium">{account.name}</TableCell>
                                         <TableCell>{account.email}</TableCell>
+                                        <TableCell>{account.phone}</TableCell>
                                         <TableCell>
                                             <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary capitalize">
                                                 {account.role}
@@ -214,20 +290,30 @@ export default function UsersPage() {
                                             {new Date(account.createdAt).toLocaleDateString()}
                                         </TableCell>
                                         <TableCell className="text-right">
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                disabled={account.id === currentUser?.id}
-                                                onClick={() => {
-                                                    if (account.id !== currentUser?.id) {
-                                                        setUserToDelete({ id: account.id, name: account.name });
+                                            <div className="flex gap-1 justify-end">
+                                                {account.id === currentUser?.id && (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={openEditDialog}
+                                                        title="Edit your profile"
+                                                    >
+                                                        <Edit2 className="h-4 w-4" />
+                                                    </Button>
+                                                )}
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    disabled={account.id === currentUser?.id || account.role === 'admin'}
+                                                    onClick={() => {
+                                                        setUserToDelete({ id: account.id, name: account.name, role: account.role });
                                                         setDeleteConfirmOpen(true);
-                                                    }
-                                                }}
-                                                title={account.id === currentUser?.id ? 'Cannot delete your own account' : 'Delete user'}
-                                            >
-                                                <Trash2 className="h-4 w-4" />
-                                            </Button>
+                                                    }}
+                                                    title={account.id === currentUser?.id ? 'Cannot delete your own account' : account.role === 'admin' ? 'Cannot delete admin accounts' : 'Delete user'}
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            </div>
                                         </TableCell>
                                     </TableRow>
                                 ))}
@@ -236,6 +322,60 @@ export default function UsersPage() {
                     </div>
                 </CardContent>
             </Card>
+
+            <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Edit Your Profile</DialogTitle>
+                        <DialogDescription>
+                            Update your name, phone number, or password
+                        </DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleUpdateProfile} className="space-y-4">
+                        <div className="space-y-1.5">
+                            <Label htmlFor="editName" className="text-xs">Full Name</Label>
+                            <Input
+                                id="editName"
+                                type="text"
+                                value={editName}
+                                onChange={(e) => setEditName(e.target.value)}
+                                placeholder="John Doe"
+                                required
+                            />
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label htmlFor="editPhone" className="text-xs">Phone</Label>
+                            <Input
+                                id="editPhone"
+                                type="tel"
+                                value={editPhone}
+                                onChange={(e) => setEditPhone(e.target.value)}
+                                placeholder="01700000000"
+                                required
+                            />
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label htmlFor="editPassword" className="text-xs">New Password (optional)</Label>
+                            <Input
+                                id="editPassword"
+                                type="password"
+                                value={editPassword}
+                                onChange={(e) => setEditPassword(e.target.value)}
+                                placeholder="Leave empty to keep current password"
+                            />
+                            {editPassword && editPassword.length < 6 && (
+                                <p className="text-xs text-destructive">Password must be at least 6 characters</p>
+                            )}
+                        </div>
+                        <DialogFooter>
+                            <DialogClose asChild>
+                                <Button variant="secondary" size="sm">Cancel</Button>
+                            </DialogClose>
+                            <Button type="submit" size="sm">Update Profile</Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
 
             <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
                 <DialogContent>

@@ -35,17 +35,18 @@ const seedEMIs: EMI[] = [
 ];
 
 const seedAccounts: UserAccount[] = [
-  { id: '1', name: 'Admin User', email: 'admin@bikehub.com', password: 'admin123', role: 'admin', createdAt: new Date().toISOString() },
-  { id: '2', name: 'Store Manager', email: 'manager@bikehub.com', password: 'manager123', role: 'manager', createdAt: new Date().toISOString() },
-  { id: '3', name: 'Sales Staff', email: 'sales@bikehub.com', password: 'sales123', role: 'salesman', createdAt: new Date().toISOString() },
+  { id: '1', name: 'Admin User', email: 'admin@bikehub.com', password: 'admin123', phone: '01700000001', role: 'admin', createdAt: new Date().toISOString() },
+  { id: '2', name: 'Store Manager', email: 'manager@bikehub.com', password: 'manager123', phone: '01700000002', role: 'manager', createdAt: new Date().toISOString() },
+  { id: '3', name: 'Sales Staff', email: 'sales@bikehub.com', password: 'sales123', phone: '01700000003', role: 'salesman', createdAt: new Date().toISOString() },
 ];
 
 interface AppState {
   // Auth
   currentUser: { id: string; name: string; role: UserRole } | null;
   accounts: UserAccount[];
-  register: (name: string, email: string, password: string, role: UserRole) => { success: boolean; error?: string };
+  register: (name: string, email: string, password: string, phone: string, role: UserRole) => { success: boolean; error?: string };
   loginWithCredentials: (email: string, password: string) => { success: boolean; error?: string };
+  updateUser: (userId: string, updates: { name?: string; phone?: string; password?: string }) => { success: boolean; error?: string };
   deleteUser: (userId: string) => { success: boolean; error?: string };
   logout: () => void;
   // Dark mode
@@ -87,7 +88,7 @@ export const useStore = create<AppState>()(
     (set, get) => ({
       currentUser: null,
       accounts: seedAccounts,
-      register: (name, email, password, role) => {
+      register: (name, email, password, phone, role) => {
         const state = get();
         if (state.accounts.find((a) => a.email.toLowerCase() === email.toLowerCase())) {
           return { success: false, error: 'Email already registered' };
@@ -95,7 +96,7 @@ export const useStore = create<AppState>()(
         if (password.length < 6) {
           return { success: false, error: 'Password must be at least 6 characters' };
         }
-        const account: UserAccount = { id: generateId(), name, email, password, role, createdAt: new Date().toISOString() };
+        const account: UserAccount = { id: generateId(), name, email, password, phone, role, createdAt: new Date().toISOString() };
         set({ accounts: [...state.accounts, account] });
         return { success: true };
       },
@@ -112,11 +113,33 @@ export const useStore = create<AppState>()(
       },
       deleteUser: (userId) => {
         const state = get();
+        const currentUser = state.currentUser;
         const userToDelete = state.accounts.find((a) => a.id === userId);
         if (!userToDelete) {
           return { success: false, error: 'User not found' };
         }
+        if (userToDelete.role === 'admin' && currentUser?.id !== userId) {
+          return { success: false, error: 'Admin accounts can only be deleted by themselves' };
+        }
         set({ accounts: state.accounts.filter((a) => a.id !== userId) });
+        return { success: true };
+      },
+      updateUser: (userId, updates) => {
+        const state = get();
+        const userToUpdate = state.accounts.find((a) => a.id === userId);
+        if (!userToUpdate) {
+          return { success: false, error: 'User not found' };
+        }
+        if (updates.password && updates.password.length < 6) {
+          return { success: false, error: 'Password must be at least 6 characters' };
+        }
+        const updated = {
+          ...userToUpdate,
+          name: updates.name ?? userToUpdate.name,
+          phone: updates.phone ?? userToUpdate.phone,
+          password: updates.password ?? userToUpdate.password,
+        };
+        set({ accounts: state.accounts.map((a) => (a.id === userId ? updated : a)) });
         return { success: true };
       },
       logout: () => set({ currentUser: null }),
