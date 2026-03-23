@@ -25,15 +25,7 @@ function ProtectedRoute({ page, children }: { page: string; children: React.Reac
   if (!currentUser) return <Navigate to="/" replace />;
   const allowed = ROLE_PERMISSIONS[currentUser.role];
   if (!allowed.includes(page)) {
-    return (
-      <div className="flex items-center justify-center h-[60vh] text-center">
-        <div>
-          <p className="text-4xl mb-2">🔒</p>
-          <h2 className="text-lg font-semibold">Access Denied</h2>
-          <p className="text-sm text-muted-foreground mt-1">Your role ({currentUser.role}) does not have access to this page.</p>
-        </div>
-      </div>
-    );
+    return <NotFound />;
   }
   return <>{children}</>;
 }
