@@ -31,7 +31,7 @@ const navItems = [
 ];
 
 export function AppSidebar() {
-  const { state } = useSidebar();
+  const { state, isMobile, setOpenMobile } = useSidebar();
   const collapsed = state === 'collapsed';
   const { currentUser, logout, darkMode, toggleDarkMode } = useStore();
   const [logoutDialogOpen, setLogoutDialogOpen] = React.useState(false);
@@ -65,6 +65,11 @@ export function AppSidebar() {
                       end={item.url === '/'}
                       className="hover:bg-sidebar-accent/60 transition-colors duration-150"
                       activeClassName="bg-sidebar-accent text-sidebar-primary font-semibold"
+                      onClick={() => {
+                        if (isMobile) {
+                          setOpenMobile(false);
+                        }
+                      }}
                     >
                       <item.icon className="mr-2 h-4 w-4 flex-shrink-0" />
                       {!collapsed && <span>{item.title}</span>}
