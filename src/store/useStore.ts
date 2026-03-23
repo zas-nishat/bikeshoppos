@@ -47,7 +47,7 @@ interface AppState {
   accounts: UserAccount[];
   register: (name: string, email: string, password: string, phone: string, role: UserRole) => Promise<{ success: boolean; error?: string }>;
   loginWithCredentials: (email: string, password: string) => { success: boolean; error?: string };
-  updateUser: (userId: string, updates: { name?: string; phone?: string; password?: string }) => Promise<{ success: boolean; error?: string }>;
+  updateUser: (userId: string, updates: { name?: string; email?: string; phone?: string; password?: string }) => Promise<{ success: boolean; error?: string }>;
   deleteUser: (userId: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   // Dark mode
@@ -93,8 +93,11 @@ export const useStore = create<AppState>()(
       accounts: seedAccounts,
       register: async (name, email, password, phone, role) => {
         const state = get();
-        if (state.accounts.find((a) => a.email.toLowerCase() === email.toLowerCase())) {
-          return { success: false, error: 'Email already registered' };
+        if (state.accounts.some((a) => a.email.toLowerCase() === email.toLowerCase())) {
+          return { success: false, error: 'Email already exists' };
+        }
+        if (phone && state.accounts.some((a) => a.phone === phone)) {
+          return { success: false, error: 'Phone number already exists' };
         }
         if (password.length < 6) {
           return { success: false, error: 'Password must be at least 6 characters' };
@@ -135,12 +138,22 @@ export const useStore = create<AppState>()(
         if (!userToUpdate) {
           return { success: false, error: 'User not found' };
         }
+        
+        // Prevent setting a phone/email that belongs to a different user
+        if (updates.email && state.accounts.some((a) => a.id !== userId && a.email.toLowerCase() === updates.email?.toLowerCase())) {
+          return { success: false, error: 'Email already exists' };
+        }
+        if (updates.phone && state.accounts.some((a) => a.id !== userId && a.phone === updates.phone)) {
+          return { success: false, error: 'Phone number already exists' };
+        }
+
         if (updates.password && updates.password.length < 6) {
           return { success: false, error: 'Password must be at least 6 characters' };
         }
         const updated = {
           ...userToUpdate,
           name: updates.name ?? userToUpdate.name,
+          email: updates.email ?? userToUpdate.email,
           phone: updates.phone ?? userToUpdate.phone,
           password: updates.password ?? userToUpdate.password,
         };
