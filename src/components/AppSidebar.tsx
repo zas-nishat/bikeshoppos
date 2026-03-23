@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { LayoutDashboard, Bike, Users, ShoppingCart, Receipt, Package, Wallet, BarChart3, LogOut, Moon, Sun } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useStore } from '@/store/useStore';
@@ -7,6 +8,16 @@ import {
   SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarFooter, useSidebar,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogFooter,
+  DialogTitle,
+  DialogDescription,
+  DialogClose,
+} from '@/components/ui/dialog';
 
 const navItems = [
   { title: 'Dashboard', url: '/', icon: LayoutDashboard, key: 'dashboard' },
@@ -23,6 +34,7 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === 'collapsed';
   const { currentUser, logout, darkMode, toggleDarkMode } = useStore();
+  const [logoutDialogOpen, setLogoutDialogOpen] = React.useState(false);
 
   const allowedPages = currentUser ? ROLE_PERMISSIONS[currentUser.role] : [];
   const visibleItems = navItems.filter((item) => allowedPages.includes(item.key));
@@ -70,10 +82,37 @@ export function AppSidebar() {
           {!collapsed && (darkMode ? 'Light Mode' : 'Dark Mode')}
         </Button>
         {currentUser && (
-          <Button variant="ghost" size="sm" onClick={logout} className="w-full justify-start text-sidebar-foreground hover:text-destructive hover:bg-sidebar-accent/60">
-            <LogOut className="h-4 w-4 mr-2" />
-            {!collapsed && 'Logout'}
-          </Button>
+          <Dialog open={logoutDialogOpen} onOpenChange={setLogoutDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="ghost" size="sm" className="w-full justify-start text-sidebar-foreground hover:text-destructive hover:bg-sidebar-accent/60">
+                <LogOut className="h-4 w-4 mr-2" />
+                {!collapsed && 'Logout'}
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Confirm Logout</DialogTitle>
+                <DialogDescription>
+                  Are you sure you want to logout? You will be redirected to the login page.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button variant="secondary" size="sm">Cancel</Button>
+                </DialogClose>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => {
+                    logout();
+                    setLogoutDialogOpen(false);
+                  }}
+                >
+                  Confirm
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         )}
       </SidebarFooter>
     </Sidebar>
