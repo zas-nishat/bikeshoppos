@@ -69,8 +69,8 @@ export default function POSPage() {
     }
 
     const loggedInUser = accounts.find((a) => a.id === currentUser?.id);
-    const soldBy = loggedInUser ? loggedInUser.name : 'Unknown';
-    const soldByPhone = loggedInUser ? loggedInUser.phone : '';
+    const soldBy = loggedInUser?.name || currentUser?.name || 'Unknown';
+    const soldByPhone = loggedInUser?.phone || '';
 
     const saleDateIso = new Date().toISOString();
 

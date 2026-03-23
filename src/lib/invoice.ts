@@ -84,7 +84,8 @@ export async function generateInvoicePDF(sale: Sale) {
 
   if (sale.soldBy) {
     doc.setTextColor(100, 100, 100);
-    doc.text(`Sold By: ${sale.soldBy} (${sale.soldByPhone})`, pageWidth - margin, 94, { align: 'right' });
+    const soldByText = sale.soldByPhone ? `Sold By: ${sale.soldBy} (${sale.soldByPhone})` : `Sold By: ${sale.soldBy}`;
+    doc.text(soldByText, pageWidth - margin, 94, { align: 'right' });
     doc.setTextColor(textColor[0], textColor[1], textColor[2]);
   }
 
