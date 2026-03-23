@@ -12,6 +12,7 @@ import type { PaymentType, Sale } from '@/types';
 import { toast } from 'sonner';
 import { downloadInvoice, printInvoice } from '@/lib/invoice';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { formatDateTime } from '@/lib/utils';
 
 export default function POSPage() {
   const { bikes, customers, cart, addToCart, removeFromCart, updateCartQuantity, clearCart, addSale, addCustomer, addEMI, currentUser, accounts } = useStore();
@@ -275,7 +276,7 @@ export default function POSPage() {
           {lastSale && (
             <div className="space-y-4">
               <div className="bg-muted/50 rounded-lg p-4 space-y-2 text-sm">
-                <div className="flex justify-between"><span className="text-muted-foreground">Date</span><span className="font-medium">{new Date(lastSale.date).toLocaleDateString()}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Date</span><span className="font-medium">{formatDateTime(lastSale.date)}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Customer</span><span className="font-medium">{lastSale.customerName}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Sold By</span><span className="font-medium">{lastSale.soldBy || 'N/A'}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Items</span><span>{lastSale.items.length}</span></div>

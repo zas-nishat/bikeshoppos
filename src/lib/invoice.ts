@@ -1,6 +1,7 @@
 import jsPDF from 'jspdf';
 import QRCode from 'qrcode';
 import type { Sale } from '@/types';
+import { formatDateTime } from '@/lib/utils';
 
 export async function generateInvoicePDF(sale: Sale) {
   const doc = new jsPDF();
@@ -22,7 +23,7 @@ export async function generateInvoicePDF(sale: Sale) {
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
   doc.text(`Invoice #: INV-${sale.id.toUpperCase()}`, 14, 50);
-  doc.text(`Date: ${new Date(sale.date).toLocaleDateString()}`, 14, 56);
+  doc.text(`Date: ${formatDateTime(sale.date)}`, 14, 56);
   doc.text(`Customer: ${sale.customerName}`, 14, 62);
   doc.text(`Payment: ${sale.paymentType.toUpperCase()}`, 14, 68);
 
@@ -36,7 +37,7 @@ export async function generateInvoicePDF(sale: Sale) {
   try {
     const qrData = JSON.stringify({
       Invoice: `INV-${sale.id.toUpperCase()}`,
-      Date: new Date(sale.date).toLocaleDateString(),
+      Date: formatDateTime(sale.date),
       Total: sale.grandTotal,
       SoldBy: sale.soldBy || 'N/A'
     });

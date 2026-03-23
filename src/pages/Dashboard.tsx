@@ -3,7 +3,8 @@ import { StatCard } from '@/components/StatCard';
 import { PageHeader } from '@/components/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { DollarSign, Bike, ShoppingCart, AlertTriangle, TrendingUp } from 'lucide-react';
+import { ArrowUpRight, ArrowDownRight, Package, Users, DollarSign, Activity, TrendingUp, Bike, ShoppingCart, AlertTriangle } from 'lucide-react';
+import { formatDateTime } from '@/lib/utils';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 export default function Dashboard() {
@@ -101,7 +102,7 @@ export default function Dashboard() {
                     <div key={s.id} className="flex items-center justify-between text-sm">
                       <div>
                         <p className="font-medium truncate">{s.customerName}</p>
-                        <p className="text-xs text-muted-foreground">{new Date(s.date).toLocaleDateString()}</p>
+                        <p className="text-xs text-muted-foreground">{formatDateTime(s.date)}</p>
                       </div>
                       <span className="font-semibold text-foreground">৳{s.grandTotal.toLocaleString()}</span>
                     </div>

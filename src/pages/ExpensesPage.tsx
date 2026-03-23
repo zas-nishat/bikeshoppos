@@ -12,6 +12,7 @@ import { Plus, Trash2, Wallet, Download } from 'lucide-react';
 import { ROLE_ACTIONS } from '@/types';
 import type { Expense } from '@/types';
 import { toast } from 'sonner';
+import { formatDateTime } from '@/lib/utils';
 import { exportExpensesExcel } from '@/lib/export';
 
 const categoryColors: Record<string, string> = {
@@ -99,7 +100,7 @@ export default function ExpensesPage() {
                   <Badge className={`${categoryColors[e.category]} capitalize text-[10px]`}>{e.category}</Badge>
                   <div>
                     <p className="font-medium text-sm">{e.title}</p>
-                    <p className="text-xs text-muted-foreground">{new Date(e.date).toLocaleDateString()}</p>
+                    <p className="text-xs text-muted-foreground">{formatDateTime(e.date)}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">

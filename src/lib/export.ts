@@ -1,6 +1,7 @@
 import jsPDF from 'jspdf';
 import * as XLSX from 'xlsx';
 import type { Sale, Expense, Bike } from '@/types';
+import { formatDateTime } from '@/lib/utils';
 
 export function exportSalesReportPDF(sales: Sale[], title: string) {
   const doc = new jsPDF();
@@ -29,7 +30,7 @@ export function exportSalesReportPDF(sales: Sale[], title: string) {
   let grandTotal = 0;
   sales.forEach((s) => {
     if (y > 270) { doc.addPage(); y = 20; }
-    doc.text(new Date(s.date).toLocaleDateString(), 14, y);
+    doc.text(formatDateTime(s.date), 14, y);
     doc.text(s.customerName.substring(0, 20), 50, y);
     doc.text(String(s.items.length), 100, y);
     doc.text(s.paymentType, 130, y);
@@ -89,7 +90,7 @@ export function exportProfitLossPDF(sales: Sale[], expenses: Expense[], bikes: B
 
 export function exportSalesExcel(sales: Sale[]) {
   const data = sales.map((s) => ({
-    Date: new Date(s.date).toLocaleDateString(),
+    Date: formatDateTime(s.date),
     Customer: s.customerName,
     Items: s.items.map((i) => i.bikeName).join(', '),
     Subtotal: s.totalPrice,
@@ -107,7 +108,7 @@ export function exportSalesExcel(sales: Sale[]) {
 
 export function exportExpensesExcel(expenses: Expense[]) {
   const data = expenses.map((e) => ({
-    Date: new Date(e.date).toLocaleDateString(),
+    Date: formatDateTime(e.date),
     Title: e.title,
     Category: e.category,
     Amount: e.amount,

@@ -2,7 +2,9 @@ import { useStore } from '@/store/useStore';
 import { PageHeader } from '@/components/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Package, History } from 'lucide-react';
+import { Package, History, ArrowUpRight, ArrowDownRight, RefreshCcw } from 'lucide-react';
+import type { StockLog } from '@/types';
+import { formatDateTime } from '@/lib/utils';
 
 export default function InventoryPage() {
   const { bikes, stockLogs } = useStore();
@@ -61,7 +63,7 @@ export default function InventoryPage() {
                       <div>
                         <p className="font-medium">{log.bikeName}</p>
                         <p className="text-muted-foreground">{log.note}</p>
-                        <p className="text-muted-foreground">{new Date(log.date).toLocaleDateString()}</p>
+                        <p className="text-muted-foreground">{formatDateTime(log.date)}</p>
                       </div>
                       <Badge variant={log.type === 'sale' ? 'destructive' : 'default'} className="text-[10px] ml-2 shrink-0">
                         {log.quantity > 0 ? '+' : ''}{log.quantity}

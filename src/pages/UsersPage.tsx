@@ -33,6 +33,7 @@ import {
 import { toast } from 'sonner';
 import { Trash2, Plus, Edit2 } from 'lucide-react';
 import type { UserRole } from '@/types';
+import { formatDateTime } from '@/lib/utils';
 
 export default function UsersPage() {
     const { currentUser, accounts, register, deleteUser, updateUser } = useStore();
@@ -287,7 +288,7 @@ export default function UsersPage() {
                                             </span>
                                         </TableCell>
                                         <TableCell className="text-sm text-muted-foreground">
-                                            {new Date(account.createdAt).toLocaleDateString()}
+                                            {formatDateTime(account.createdAt)}
                                         </TableCell>
                                         <TableCell className="text-right">
                                             <div className="flex gap-1 justify-end">

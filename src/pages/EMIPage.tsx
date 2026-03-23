@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import { formatDateTime } from '@/lib/utils';
 
 export default function EMIPage() {
   const { emis, recordEMIPayment } = useStore();
@@ -58,7 +59,7 @@ export default function EMIPage() {
                     <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Payment History</p>
                     {e.payments.slice(-3).map((p, idx) => (
                       <div key={idx} className="flex justify-between text-xs">
-                        <span className="text-muted-foreground">{new Date(p.date).toLocaleDateString()}</span>
+                        <span className="text-muted-foreground">{formatDateTime(p.date)}</span>
                         <span className="font-medium">৳{p.amount.toLocaleString()}</span>
                       </div>
                     ))}
