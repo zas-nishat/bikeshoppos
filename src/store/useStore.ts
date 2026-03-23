@@ -206,14 +206,36 @@ export const useStore = create<AppState>()(
           return { sales: [...state.sales, newSale], bikes: updatedBikes, stockLogs: newLogs };
         });
 
-        // Use Supabase directly mapping the structured payload
-        await supabase.from('sales').insert([{ ...newSale, items: undefined }]);
+        // Extract items off payload mapping remaining natively to Posgres columns
+        const { items, ...salePayload } = newSale;
+        const result = await supabase.from('sales').insert([salePayload]);
+        
+        if (result.error) {
+            console.error('Supabase Sales Insert Error:', result.error);
+        }
 
-        // Insert items independently if they prefer 1:N relations or use JSON. The schema defines sale_items array inside TS but references table. 
-        // Using sale_items relational mapping safely array:
+        // Insert relational items independently
         const itemsToInsert = s.items.map(item => ({ ...item, saleId: id, id: generateId() }));
         if (itemsToInsert.length > 0) {
           await supabase.from('sale_items').insert(itemsToInsert);
+        }
+
+        // Record background analytical logs updating core stock database values securely
+        for (const item of s.items) {
+           const affectedBike = get().bikes.find(b => b.id === item.bikeId);
+           if (affectedBike) {
+               await supabase.from('bikes').update({ stock: affectedBike.stock }).eq('id', item.bikeId);
+           }
+           
+           await supabase.from('stock_logs').insert([{
+               id: generateId(),
+               bikeId: item.bikeId,
+               bikeName: item.bikeName,
+               type: 'sale',
+               quantity: -item.quantity,
+               date: newSale.date || new Date().toISOString(),
+               note: `Sold to ${s.customerName}`
+           }]);
         }
       },
       cart: [],
