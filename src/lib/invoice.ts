@@ -1,126 +1,167 @@
 import jsPDF from 'jspdf';
+import autoTable, { RowInput } from 'jspdf-autotable';
 import QRCode from 'qrcode';
 import type { Sale } from '@/types';
 import { formatDateTime } from '@/lib/utils';
 
 export async function generateInvoicePDF(sale: Sale) {
-  const doc = new jsPDF();
-  const w = doc.internal.pageSize.getWidth();
-
-  // Header
-  doc.setFontSize(20);
-  doc.setFont('helvetica', 'bold');
-  doc.text('BikeHub POS', w / 2, 20, { align: 'center' });
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'normal');
-  doc.text('Bike Showroom & Sales', w / 2, 27, { align: 'center' });
-
-  // Invoice info
-  doc.setFontSize(12);
-  doc.setFont('helvetica', 'bold');
-  doc.text('INVOICE', w / 2, 40, { align: 'center' });
-
-  doc.setFontSize(9);
-  doc.setFont('helvetica', 'normal');
-  doc.text(`Invoice #: INV-${sale.id.toUpperCase()}`, 14, 50);
-  doc.text(`Date: ${formatDateTime(sale.date)}`, 14, 56);
-  doc.text(`Customer: ${sale.customerName}`, 14, 62);
-  doc.text(`Payment: ${sale.paymentType.toUpperCase()}`, 14, 68);
-
-  // Line
-  let y = 73;
-  if (sale.soldBy) {
-    doc.text(`Sold By: ${sale.soldBy} ${sale.soldByPhone ? `(${sale.soldByPhone})` : ''}`, 14, 74);
-    y = 80;
-  }
-
-  try {
-    const qrData = JSON.stringify({
-      Invoice: `INV-${sale.id.toUpperCase()}`,
-      Date: formatDateTime(sale.date),
-      Total: sale.grandTotal,
-      SoldBy: sale.soldBy || 'N/A'
-    });
-    const qrImage = await QRCode.toDataURL(qrData);
-    doc.addImage(qrImage, 'PNG', w - 44, 40, 30, 30);
-  } catch (err) {
-    console.error('Failed to generate QR code', err);
-  }
-
-  doc.setDrawColor(200);
-  doc.line(14, y, w - 14, y);
-
-  // Table header
-  y += 7;
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9);
-  doc.text('Item', 14, y);
-  doc.text('Qty', 110, y);
-  doc.text('Price', 130, y);
-  doc.text('Total', 160, y);
-
-  doc.setDrawColor(200);
-  doc.line(14, y + 2, w - 14, y + 2);
-
-  // Items
-  doc.setFont('helvetica', 'normal');
-  y += 8;
-  sale.items.forEach((item) => {
-    // We print brand, model, engine CC, color, and standard name fallback.
-    const bikeStr = item.brand ? `${item.brand} ${item.model} ${item.engineCC}cc (${item.color})` : item.bikeName;
-    doc.text(bikeStr, 14, y);
-    doc.text(String(item.quantity), 110, y);
-    doc.text(`৳${item.unitPrice.toLocaleString()}`, 130, y);
-    doc.text(`৳${(item.unitPrice * item.quantity).toLocaleString()}`, 160, y);
-    y += 7;
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4',
   });
 
-  // Totals
-  doc.line(14, y, w - 14, y);
-  y += 8;
-  doc.text(`Subtotal:`, 130, y);
-  doc.text(`৳${sale.totalPrice.toLocaleString()}`, 160, y);
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const margin = 15;
 
-  if (sale.discount > 0) {
-    y += 6;
-    doc.text(`Discount:`, 130, y);
-    doc.text(`-৳${sale.discount.toLocaleString()}`, 160, y);
-  }
-  if (sale.tax > 0) {
-    y += 6;
-    doc.text(`Tax:`, 130, y);
-    doc.text(`৳${sale.tax.toLocaleString()}`, 160, y);
-  }
+  // Colors
+  const primaryColor = [31, 41, 55]; // Dark Navy
+  const accentColor = [37, 99, 235];  // Blue
+  const textColor = [55, 65, 81];    // Slate Gray
 
-  y += 8;
+  // --- 1. Header ---
+  doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+  doc.rect(0, 0, pageWidth, 40, 'F');
+
+  doc.setTextColor(255, 255, 255);
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11);
-  doc.text(`Grand Total:`, 125, y);
-  doc.text(`৳${sale.grandTotal.toLocaleString()}`, 160, y);
+  doc.setFontSize(22);
+  doc.text('BIKEHUB POS', margin, 20);
 
-  // Signatures
-  y += 30;
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
-  
-  doc.setDrawColor(150);
-  doc.line(14, y, 60, y);
-  doc.text('Customer Signature', 18, y + 5);
+  doc.text('Premium Motorcycle Sales & Service Center', margin, 27);
+  doc.text('123 Bike Avenue, Dhaka | +880 1XXX-XXXXXX', margin, 33);
 
-  doc.line(w - 60, y, w - 14, y);
-  doc.text('Authorized Signature', w - 55, y + 5);
+  // --- 2. QR Code ---
+  try {
+    const qrData = JSON.stringify({
+      id: sale.id.toUpperCase(),
+      total: sale.grandTotal,
+      date: formatDateTime(sale.date)
+    });
+    const qrImage = await QRCode.toDataURL(qrData);
+    doc.addImage(qrImage, 'PNG', pageWidth - 45, 45, 30, 30);
+  } catch (err) {
+    console.error('QR error', err);
+  }
 
-  // Footer
+  // --- 3. Invoice Info ---
+  doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+  doc.setFontSize(16);
+  doc.setFont('helvetica', 'bold');
+  doc.text('INVOICE', margin, 55);
+
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(textColor[0], textColor[1], textColor[2]);
+
+  doc.text(`Invoice No : INV-${sale.id.toUpperCase()}`, margin, 65);
+  doc.text(`Date           : ${formatDateTime(sale.date)}`, margin, 70);
+  doc.text(`Payment      : ${sale.paymentType.toUpperCase()}`, margin, 75);
+
+  doc.setFont('helvetica', 'bold');
+  doc.text('BILL TO:', margin, 88);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(11);
+  doc.text(sale.customerName, margin, 94);
+
+  if (sale.soldBy) {
+    doc.setFontSize(9);
+    doc.text(`Sold By: ${sale.soldBy} (${sale.soldByPhone})`, margin, 100);
+  }
+
+  // --- 4. Table (Fixed Type Assignment) ---
+  const tableRows: RowInput[] = sale.items.map((item) => [
+    {
+      content: item.brand
+        ? `${item.brand} ${item.model} ${item.engineCC}cc\nColor: ${item.color}`
+        : item.bikeName,
+      styles: { fontStyle: 'bold' as const } // Fixed TS Error
+    },
+    item.quantity.toString(),
+    `TK ${item.unitPrice.toLocaleString()}`,
+    `TK ${(item.unitPrice * item.quantity).toLocaleString()}`
+  ]);
+
+  autoTable(doc, {
+    startY: 110,
+    head: [['Item Description', 'Qty', 'Unit Price', 'Total']],
+    body: tableRows,
+    theme: 'striped',
+    headStyles: {
+      textColor: [255, 255, 255],
+      fontSize: 10,
+      fontStyle: 'bold' as const,
+    },
+    styles: { fontSize: 9, cellPadding: 4 },
+    columnStyles: {
+      1: { halign: 'center' },
+      2: { halign: 'right' },
+      3: { halign: 'right' },
+    },
+  });
+
+  // --- 5. Summary Section ---
+  const finalY = (doc as any).lastAutoTable.finalY + 10;
+  const summaryX = pageWidth - 75;
+
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+
+  doc.text('Subtotal:', summaryX, finalY);
+  doc.text(`TK ${sale.totalPrice.toLocaleString()}`, pageWidth - margin, finalY, { align: 'right' });
+
+  let currentY = finalY + 6;
+  if (sale.discount > 0) {
+    doc.setTextColor(220, 38, 38);
+    doc.text('Discount:', summaryX, currentY);
+    doc.text(`-TK ${sale.discount.toLocaleString()}`, pageWidth - margin, currentY, { align: 'right' });
+    currentY += 6;
+    doc.setTextColor(textColor[0], textColor[1], textColor[2]);
+  }
+
+  if (sale.tax > 0) {
+    doc.text('Tax:', summaryX, currentY);
+    doc.text(`TK ${sale.tax.toLocaleString()}`, pageWidth - margin, currentY, { align: 'right' });
+    currentY += 6;
+  }
+
+  doc.setDrawColor(200);
+  doc.line(summaryX, currentY - 2, pageWidth - margin, currentY - 2);
+  currentY += 4;
+  doc.setFontSize(12);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(accentColor[0], accentColor[1], accentColor[2]);
+  doc.text('Grand Total:', summaryX, currentY);
+  doc.text(`TK ${sale.grandTotal.toLocaleString()}`, pageWidth - margin, currentY, { align: 'right' });
+
+  // --- 6. Footer & Signatures ---
+  const sigY = pageHeight - 40;
+  doc.setDrawColor(200);
+  doc.setTextColor(textColor[0], textColor[1], textColor[2]);
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+
+  doc.line(margin, sigY, margin + 50, sigY);
+  doc.text('Customer Signature', margin + 8, sigY + 5);
+
+  doc.line(pageWidth - margin - 50, sigY, pageWidth - margin, sigY);
+  doc.text('Authorized Signature', pageWidth - margin - 45, sigY + 5);
+
+  doc.setFillColor(249, 250, 251);
+  doc.rect(0, pageHeight - 15, pageWidth, 15, 'F');
   doc.setFontSize(8);
-  doc.text('Thank you for your purchase!', w / 2, y + 20, { align: 'center' });
-  doc.text('BikeHub POS - Powered by technology', w / 2, y + 26, { align: 'center' });
+  doc.setTextColor(107, 114, 128);
+  doc.text('Thank you for choosing BikeHub! Ride safe and wear a helmet.', pageWidth / 2, pageHeight - 7, { align: 'center' });
 
   return doc;
 }
 
 export async function downloadInvoice(sale: Sale) {
   const doc = await generateInvoicePDF(sale);
-  doc.save(`invoice-${sale.id}.pdf`);
+  doc.save(`Invoice_INV-${sale.id.toUpperCase()}.pdf`);
 }
 
 export async function printInvoice(sale: Sale) {
@@ -130,8 +171,8 @@ export async function printInvoice(sale: Sale) {
   const win = window.open(url);
   if (win) {
     win.onload = () => {
+      win.focus();
       win.print();
-      URL.revokeObjectURL(url);
     };
   }
 }
