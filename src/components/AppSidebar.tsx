@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Bike, Users, ShoppingCart, Receipt, Package, Wallet, BarChart3, LogOut, Moon, Sun } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useStore } from '@/store/useStore';
@@ -32,6 +33,7 @@ const navItems = [
 ];
 
 export function AppSidebar() {
+  const navigate = useNavigate();
   const { state, isMobile, setOpenMobile } = useSidebar();
   const collapsed = state === 'collapsed';
   const { currentUser, logout, darkMode, toggleDarkMode } = useStore();
@@ -112,6 +114,7 @@ export function AppSidebar() {
                   onClick={() => {
                     logout();
                     setLogoutDialogOpen(false);
+                    navigate('/', { replace: true });
                   }}
                 >
                   Confirm
