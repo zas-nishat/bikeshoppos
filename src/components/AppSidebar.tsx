@@ -22,7 +22,7 @@ import {
 
 const navItems = [
   { title: 'Dashboard', url: '/', icon: LayoutDashboard, key: 'dashboard' },
-  { title: 'POS / Sales', url: '/pos', icon: ShoppingCart, key: 'pos' },
+  { title: 'Sell Bike', url: '/sell-bikes', icon: ShoppingCart, key: 'pos' },
   { title: 'Bikes', url: '/bikes', icon: Bike, key: 'bikes' },
   { title: 'Customers', url: '/customers', icon: Users, key: 'customers' },
   { title: 'EMI Tracking', url: '/emi', icon: Receipt, key: 'emi' },

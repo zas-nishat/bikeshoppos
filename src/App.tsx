@@ -43,7 +43,7 @@ function AppContent() {
     <AppLayout>
       <Routes>
         <Route path="/" element={<ProtectedRoute page="dashboard"><Dashboard /></ProtectedRoute>} />
-        <Route path="/pos" element={<ProtectedRoute page="pos"><POSPage /></ProtectedRoute>} />
+        <Route path="/sell-bikes" element={<ProtectedRoute page="pos"><POSPage /></ProtectedRoute>} />
         <Route path="/bikes" element={<ProtectedRoute page="bikes"><BikesPage /></ProtectedRoute>} />
         <Route path="/customers" element={<ProtectedRoute page="customers"><CustomersPage /></ProtectedRoute>} />
         <Route path="/emi" element={<ProtectedRoute page="emi"><EMIPage /></ProtectedRoute>} />
