@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose, DialogDescription } from '@/components/ui/dialog';
 import { Plus, Search, Users, Edit2 } from 'lucide-react';
 import type { Customer } from '@/types';
 import { toast } from 'sonner';
@@ -35,6 +35,8 @@ export default function CustomersPage() {
   const [search, setSearch] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Customer | undefined>();
+  const [updateConfirmOpen, setUpdateConfirmOpen] = useState(false);
+  const [pendingData, setPendingData] = useState<Omit<Customer, 'id'> | null>(null);
 
   const filtered = customers.filter((c) =>
     `${c.name} ${c.phone}`.toLowerCase().includes(search.toLowerCase())
@@ -53,8 +55,8 @@ export default function CustomersPage() {
               customer={editing}
               onSubmit={(data) => {
                 if (editing) {
-                  updateCustomer(editing.id, data);
-                  toast.success('Customer updated');
+                  setPendingData(data);
+                  setUpdateConfirmOpen(true);
                 } else {
                   addCustomer(data);
                   toast.success('Customer added');
@@ -103,6 +105,37 @@ export default function CustomersPage() {
           ))}
         </div>
       )}
+
+      <Dialog open={updateConfirmOpen} onOpenChange={setUpdateConfirmOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Update Customer</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to update {editing?.name}?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="secondary" size="sm">Cancel</Button>
+            </DialogClose>
+            <Button
+              size="sm"
+              onClick={() => {
+                if (editing && pendingData) {
+                  updateCustomer(editing.id, pendingData);
+                  toast.success('Customer updated successfully');
+                  setUpdateConfirmOpen(false);
+                  setDialogOpen(false);
+                  setEditing(undefined);
+                  setPendingData(null);
+                }
+              }}
+            >
+              Update
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

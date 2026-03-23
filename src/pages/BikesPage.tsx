@@ -5,14 +5,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose, DialogDescription } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Search, Edit2, Trash2, Bike } from 'lucide-react';
 import { ROLE_ACTIONS } from '@/types';
 import type { Bike as BikeType } from '@/types';
 import { toast } from 'sonner';
 
-function BikeForm({ bike, onSubmit, onClose }: { bike?: BikeType; onSubmit: (data: Omit<BikeType, 'id'>) => void; onClose: () => void }) {
+function BikeForm({ bike, onSubmit, onClose, isUpdating = false }: { bike?: BikeType; onSubmit: (data: Omit<BikeType, 'id'>) => void; onClose: () => void; isUpdating?: boolean }) {
   const [form, setForm] = useState({
     name: bike?.name || '', brand: bike?.brand || '', model: bike?.model || '',
     engineCC: bike?.engineCC || 0, color: bike?.color || '', purchasePrice: bike?.purchasePrice || 0,
@@ -20,8 +20,19 @@ function BikeForm({ bike, onSubmit, onClose }: { bike?: BikeType; onSubmit: (dat
   });
   const set = (k: string, v: string | number) => setForm((p) => ({ ...p, [k]: v }));
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isUpdating && bike) {
+      // For updates, we'll trigger the confirmation dialog in BikesPage
+      onSubmit(form);
+    } else {
+      onSubmit(form);
+      onClose();
+    }
+  };
+
   return (
-    <form onSubmit={(e) => { e.preventDefault(); onSubmit(form); onClose(); }} className="space-y-3">
+    <form onSubmit={handleSubmit} className="space-y-3">
       <div className="grid grid-cols-2 gap-3">
         <div><Label className="text-xs">Name</Label><Input value={form.name} onChange={(e) => set('name', e.target.value)} required /></div>
         <div><Label className="text-xs">Brand</Label><Input value={form.brand} onChange={(e) => set('brand', e.target.value)} required /></div>
@@ -45,6 +56,10 @@ export default function BikesPage() {
   const [search, setSearch] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<BikeType | undefined>();
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [bikeToDelete, setBikeToDelete] = useState<BikeType | null>(null);
+  const [updateConfirmOpen, setUpdateConfirmOpen] = useState(false);
+  const [pendingBikeData, setPendingBikeData] = useState<Omit<BikeType, 'id'> | null>(null);
 
   const role = currentUser?.role || 'salesman';
   const canAdd = ROLE_ACTIONS[role].includes('add_bike');
@@ -67,13 +82,16 @@ export default function BikesPage() {
               <DialogHeader><DialogTitle>{editing ? 'Edit' : 'Add'} Bike</DialogTitle></DialogHeader>
               <BikeForm
                 bike={editing}
+                isUpdating={!!editing}
                 onSubmit={(data) => {
                   if (editing) {
-                    updateBike(editing.id, data);
-                    toast.success('Bike updated successfully');
+                    setPendingBikeData(data);
+                    setUpdateConfirmOpen(true);
                   } else {
                     addBike(data);
                     toast.success('Bike added successfully');
+                    setDialogOpen(false);
+                    setEditing(undefined);
                   }
                 }}
                 onClose={() => { setDialogOpen(false); setEditing(undefined); }}
@@ -124,7 +142,15 @@ export default function BikesPage() {
                       </Button>
                     )}
                     {canDelete && (
-                      <Button size="sm" variant="ghost" className="h-7 text-xs text-destructive hover:text-destructive flex-1" onClick={() => { deleteBike(b.id); toast.success('Bike deleted'); }}>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 text-xs text-destructive hover:text-destructive flex-1"
+                        onClick={() => {
+                          setBikeToDelete(b);
+                          setDeleteConfirmOpen(true);
+                        }}
+                      >
                         <Trash2 className="h-3 w-3 mr-1" />Delete
                       </Button>
                     )}
@@ -135,6 +161,67 @@ export default function BikesPage() {
           ))}
         </div>
       )}
+
+      <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Bike</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete {bikeToDelete?.name}? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="secondary" size="sm">Cancel</Button>
+            </DialogClose>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => {
+                if (bikeToDelete) {
+                  deleteBike(bikeToDelete.id);
+                  toast.success('Bike deleted successfully');
+                  setDeleteConfirmOpen(false);
+                  setBikeToDelete(null);
+                }
+              }}
+            >
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={updateConfirmOpen} onOpenChange={setUpdateConfirmOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Update Bike</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to update {editing?.name}?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="secondary" size="sm">Cancel</Button>
+            </DialogClose>
+            <Button
+              size="sm"
+              onClick={() => {
+                if (editing && pendingBikeData) {
+                  updateBike(editing.id, pendingBikeData);
+                  toast.success('Bike updated successfully');
+                  setUpdateConfirmOpen(false);
+                  setPendingBikeData(null);
+                  setDialogOpen(false);
+                  setEditing(undefined);
+                }
+              }}
+            >
+              Update
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

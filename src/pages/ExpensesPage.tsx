@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose, DialogDescription } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Trash2, Wallet, Download } from 'lucide-react';
 import { ROLE_ACTIONS } from '@/types';
@@ -25,6 +25,8 @@ export default function ExpensesPage() {
   const { expenses, addExpense, deleteExpense, currentUser } = useStore();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState({ title: '', amount: 0, category: 'other' as Expense['category'] });
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [expenseToDelete, setExpenseToDelete] = useState<Expense | null>(null);
 
   const role = currentUser?.role || 'salesman';
   const canAdd = ROLE_ACTIONS[role].includes('add_expense');
@@ -103,7 +105,15 @@ export default function ExpensesPage() {
                 <div className="flex items-center gap-2">
                   <span className="font-bold text-sm">৳{e.amount.toLocaleString()}</span>
                   {canDelete && (
-                    <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => { deleteExpense(e.id); toast.success('Expense deleted'); }}>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7 text-destructive"
+                      onClick={() => {
+                        setExpenseToDelete(e);
+                        setDeleteConfirmOpen(true);
+                      }}
+                    >
                       <Trash2 className="h-3 w-3" />
                     </Button>
                   )}
@@ -113,6 +123,36 @@ export default function ExpensesPage() {
           ))}
         </div>
       )}
+
+      <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Expense</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete "{expenseToDelete?.title}"? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="secondary" size="sm">Cancel</Button>
+            </DialogClose>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => {
+                if (expenseToDelete) {
+                  deleteExpense(expenseToDelete.id);
+                  toast.success('Expense deleted successfully');
+                  setDeleteConfirmOpen(false);
+                  setExpenseToDelete(null);
+                }
+              }}
+            >
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
