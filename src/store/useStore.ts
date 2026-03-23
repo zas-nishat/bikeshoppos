@@ -46,6 +46,7 @@ interface AppState {
   accounts: UserAccount[];
   register: (name: string, email: string, password: string, role: UserRole) => { success: boolean; error?: string };
   loginWithCredentials: (email: string, password: string) => { success: boolean; error?: string };
+  deleteUser: (userId: string) => { success: boolean; error?: string };
   logout: () => void;
   // Dark mode
   darkMode: boolean;
@@ -107,6 +108,15 @@ export const useStore = create<AppState>()(
         );
         if (!account) return { success: false, error: 'Invalid email/username or password' };
         set({ currentUser: { id: account.id, name: account.name, role: account.role } });
+        return { success: true };
+      },
+      deleteUser: (userId) => {
+        const state = get();
+        const userToDelete = state.accounts.find((a) => a.id === userId);
+        if (!userToDelete) {
+          return { success: false, error: 'User not found' };
+        }
+        set({ accounts: state.accounts.filter((a) => a.id !== userId) });
         return { success: true };
       },
       logout: () => set({ currentUser: null }),

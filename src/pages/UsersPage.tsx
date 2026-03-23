@@ -35,12 +35,14 @@ import { Trash2, Plus } from 'lucide-react';
 import type { UserRole } from '@/types';
 
 export default function UsersPage() {
-    const { currentUser, accounts, register } = useStore();
+    const { currentUser, accounts, register, deleteUser } = useStore();
     const [newName, setNewName] = useState('');
     const [newEmail, setNewEmail] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [newRole, setNewRole] = useState<UserRole>('salesman');
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+    const [userToDelete, setUserToDelete] = useState<{ id: string; name: string } | null>(null);
 
     // Only admin can access this page
     if (currentUser?.role !== 'admin') {
@@ -89,6 +91,19 @@ export default function UsersPage() {
             setIsDialogOpen(false);
         } else {
             toast.error(result.error || 'Failed to create user');
+        }
+    };
+
+    const handleDeleteUser = () => {
+        if (userToDelete) {
+            const result = deleteUser(userToDelete.id);
+            if (result.success) {
+                toast.success(`User "${userToDelete.name}" deleted successfully`);
+                setDeleteConfirmOpen(false);
+                setUserToDelete(null);
+            } else {
+                toast.error(result.error || 'Failed to delete user');
+            }
         }
     };
 
@@ -203,6 +218,12 @@ export default function UsersPage() {
                                                 variant="ghost"
                                                 size="sm"
                                                 disabled={account.id === currentUser?.id}
+                                                onClick={() => {
+                                                    if (account.id !== currentUser?.id) {
+                                                        setUserToDelete({ id: account.id, name: account.name });
+                                                        setDeleteConfirmOpen(true);
+                                                    }
+                                                }}
                                                 title={account.id === currentUser?.id ? 'Cannot delete your own account' : 'Delete user'}
                                             >
                                                 <Trash2 className="h-4 w-4" />
@@ -215,6 +236,29 @@ export default function UsersPage() {
                     </div>
                 </CardContent>
             </Card>
+
+            <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Delete User</DialogTitle>
+                        <DialogDescription>
+                            Are you sure you want to delete {userToDelete?.name}? This action cannot be undone.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <DialogClose asChild>
+                            <Button variant="secondary" size="sm">Cancel</Button>
+                        </DialogClose>
+                        <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={handleDeleteUser}
+                        >
+                            Delete User
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
