@@ -33,6 +33,9 @@ export interface Sale {
   id: string;
   customerId: string;
   customerName: string;
+  customerPhone?: string;
+  customerAddress?: string;
+  customerEmail?: string;
   items: { 
     bikeId: string; 
     bikeName: string; 

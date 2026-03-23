@@ -67,9 +67,25 @@ export async function generateInvoicePDF(sale: Sale) {
   doc.setFontSize(11);
   doc.text(sale.customerName, margin, 94);
 
+  let tempY = 99;
+  doc.setFontSize(9);
+  if (sale.customerPhone) {
+    doc.text(`Phone: ${sale.customerPhone}`, margin, tempY);
+    tempY += 5;
+  }
+  if (sale.customerEmail) {
+    doc.text(`Email: ${sale.customerEmail}`, margin, tempY);
+    tempY += 5;
+  }
+  if (sale.customerAddress) {
+    doc.text(`Address: ${sale.customerAddress}`, margin, tempY);
+    tempY += 5;
+  }
+
   if (sale.soldBy) {
-    doc.setFontSize(9);
-    doc.text(`Sold By: ${sale.soldBy} (${sale.soldByPhone})`, margin, 100);
+    doc.setTextColor(100, 100, 100);
+    doc.text(`Sold By: ${sale.soldBy} (${sale.soldByPhone})`, pageWidth - margin, 94, { align: 'right' });
+    doc.setTextColor(textColor[0], textColor[1], textColor[2]);
   }
 
   // --- 4. Table (Fixed Type Assignment) ---
@@ -85,8 +101,10 @@ export async function generateInvoicePDF(sale: Sale) {
     `TK ${(item.unitPrice * item.quantity).toLocaleString()}`
   ]);
 
+  const tableStartY = Math.max(110, tempY + 5);
+
   autoTable(doc, {
-    startY: 110,
+    startY: tableStartY,
     head: [['Item Description', 'Qty', 'Unit Price', 'Total']],
     body: tableRows,
     theme: 'striped',

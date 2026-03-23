@@ -56,9 +56,17 @@ export default function POSPage() {
   const finalizeSale = () => {
     let finalCustomerId = customerId;
     let customerName = '';
+    let customerPhone = '';
+    let customerAddress = '';
+    let customerEmail = '';
 
     const c = customers.find((c) => c.id === finalCustomerId);
-    if (c) customerName = c.name;
+    if (c) {
+      customerName = c.name;
+      customerPhone = c.phone || '';
+      customerAddress = c.address || '';
+      customerEmail = c.email || '';
+    }
 
     const loggedInUser = accounts.find((a) => a.id === currentUser?.id);
     const soldBy = loggedInUser ? loggedInUser.name : 'Unknown';
@@ -70,6 +78,9 @@ export default function POSPage() {
     const saleData: Omit<Sale, 'id'> = {
       customerId: finalCustomerId,
       customerName,
+      customerPhone,
+      customerAddress,
+      customerEmail,
       items: cart.map((c) => ({ 
         bikeId: c.bike.id, 
         bikeName: c.bike.name, 
