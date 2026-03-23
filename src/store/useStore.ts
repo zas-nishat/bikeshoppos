@@ -64,7 +64,7 @@ interface AppState {
   updateCustomer: (id: string, c: Partial<Customer>) => Promise<void>;
   // Sales
   sales: Sale[];
-  addSale: (s: Omit<Sale, 'id'>) => Promise<void>;
+  addSale: (s: Omit<Sale, 'id'>) => Promise<string>;
   // Cart
   cart: CartItem[];
   addToCart: (bike: Bike) => void;
@@ -237,6 +237,8 @@ export const useStore = create<AppState>()(
                note: `Sold to ${s.customerName}`
            }]);
         }
+        
+        return id;
       },
       cart: [],
       addToCart: (bike) => set((s) => {

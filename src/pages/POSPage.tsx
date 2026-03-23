@@ -53,7 +53,7 @@ export default function POSPage() {
     setConfirmOpen(true);
   };
 
-  const finalizeSale = () => {
+  const finalizeSale = async () => {
     let finalCustomerId = customerId;
     let customerName = '';
     let customerPhone = '';
@@ -72,7 +72,6 @@ export default function POSPage() {
     const soldBy = loggedInUser ? loggedInUser.name : 'Unknown';
     const soldByPhone = loggedInUser ? loggedInUser.phone : '';
 
-    const completedSaleId = Math.random().toString(36).substring(2, 10);
     const saleDateIso = new Date().toISOString();
 
     const saleData: Omit<Sale, 'id'> = {
@@ -102,7 +101,7 @@ export default function POSPage() {
       soldByPhone,
     };
 
-    addSale(saleData);
+    const completedSaleId = await addSale(saleData);
 
     const completedSale: Sale = { ...saleData, id: completedSaleId };
     setLastSale(completedSale);
@@ -111,7 +110,7 @@ export default function POSPage() {
 
     if (paymentType === 'emi') {
       const due = grandTotal - downPayment;
-      addEMI({
+      await addEMI({
         saleId: completedSaleId,
         customerName,
         downPayment,
