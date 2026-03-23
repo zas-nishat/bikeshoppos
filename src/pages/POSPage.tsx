@@ -14,7 +14,7 @@ import { downloadInvoice, printInvoice } from '@/lib/invoice';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 export default function POSPage() {
-  const { bikes, customers, cart, addToCart, removeFromCart, updateCartQuantity, clearCart, addSale, addCustomer, addEMI } = useStore();
+  const { bikes, customers, cart, addToCart, removeFromCart, updateCartQuantity, clearCart, addSale, addCustomer, addEMI, currentUser, accounts } = useStore();
   const [search, setSearch] = useState('');
   const [customerId, setCustomerId] = useState('');
   const [discount, setDiscount] = useState(0);
@@ -27,6 +27,8 @@ export default function POSPage() {
   const [newCustomerPhone, setNewCustomerPhone] = useState('');
   const [lastSale, setLastSale] = useState<Sale | null>(null);
   const [invoiceOpen, setInvoiceOpen] = useState(false);
+  const [saleDate, setSaleDate] = useState(new Date().toISOString().split('T')[0]);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const filteredBikes = bikes.filter((b) =>
     b.stock > 0 && `${b.name} ${b.brand} ${b.model}`.toLowerCase().includes(search.toLowerCase())
@@ -38,6 +40,18 @@ export default function POSPage() {
   const grandTotal = subtotal - discountAmount + taxAmount;
 
   const handleCheckout = () => {
+    if (!customerId && (!newCustomerName || !newCustomerPhone)) {
+      toast.error('Please select or add a customer');
+      return;
+    }
+    if (cart.length === 0) {
+      toast.error('Cart is empty');
+      return;
+    }
+    setConfirmOpen(true);
+  };
+
+  const finalizeSale = () => {
     let finalCustomerId = customerId;
     let customerName = '';
 
@@ -48,11 +62,15 @@ export default function POSPage() {
       customerName = newCustomerName;
     } else {
       const c = customers.find((c) => c.id === finalCustomerId);
-      if (!c) { toast.error('Please select or add a customer'); return; }
-      customerName = c.name;
+      if (c) customerName = c.name;
     }
 
-    if (cart.length === 0) { toast.error('Cart is empty'); return; }
+    const loggedInUser = accounts.find((a) => a.id === currentUser?.id);
+    const soldBy = loggedInUser ? loggedInUser.name : 'Unknown';
+    const soldByPhone = loggedInUser ? loggedInUser.phone : '';
+
+    const completedSaleId = Math.random().toString(36).substring(2, 10);
+    const saleDateIso = new Date(saleDate).toISOString();
 
     const saleData: Omit<Sale, 'id'> = {
       customerId: finalCustomerId,
@@ -64,26 +82,29 @@ export default function POSPage() {
       tax: taxAmount,
       grandTotal,
       paymentType,
-      date: new Date().toISOString(),
+      date: saleDateIso,
+      soldBy,
+      soldByPhone,
     };
 
     addSale(saleData);
 
-    const completedSale: Sale = { ...saleData, id: Math.random().toString(36).substring(2, 10) };
+    const completedSale: Sale = { ...saleData, id: completedSaleId };
     setLastSale(completedSale);
+    setConfirmOpen(false);
     setInvoiceOpen(true);
 
     if (paymentType === 'emi') {
       const due = grandTotal - downPayment;
       addEMI({
-        saleId: '',
+        saleId: completedSaleId,
         customerName,
         downPayment,
         monthlyAmount: Math.ceil(due / emiMonths),
         duration: emiMonths,
         paidAmount: downPayment,
         dueAmount: due,
-        payments: [{ date: new Date().toISOString(), amount: downPayment }],
+        payments: [{ date: saleDateIso, amount: downPayment }],
       });
     }
 
@@ -220,6 +241,11 @@ export default function POSPage() {
                     </SelectContent>
                   </Select>
                 </div>
+                
+                <div>
+                  <Label className="text-xs">Sale Date</Label>
+                  <Input type="date" className="h-8 text-xs" value={saleDate} onChange={(e) => setSaleDate(e.target.value)} />
+                </div>
 
                 {paymentType === 'emi' && (
                   <div className="grid grid-cols-2 gap-2">
@@ -255,7 +281,9 @@ export default function POSPage() {
           {lastSale && (
             <div className="space-y-4">
               <div className="bg-muted/50 rounded-lg p-4 space-y-2 text-sm">
+                <div className="flex justify-between"><span className="text-muted-foreground">Date</span><span className="font-medium">{new Date(lastSale.date).toLocaleDateString()}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Customer</span><span className="font-medium">{lastSale.customerName}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Sold By</span><span className="font-medium">{lastSale.soldBy || 'N/A'}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Items</span><span>{lastSale.items.length}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Payment</span><span className="capitalize">{lastSale.paymentType}</span></div>
                 <div className="flex justify-between font-bold text-base border-t pt-2"><span>Total</span><span>৳{lastSale.grandTotal.toLocaleString()}</span></div>
@@ -270,6 +298,22 @@ export default function POSPage() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirmation Dialog */}
+      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Confirm Sale</DialogTitle>
+          </DialogHeader>
+          <div className="py-4 text-sm text-muted-foreground">
+            Are you sure you want to finalize this sale? This action will update inventory and record the transaction.
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setConfirmOpen(false)}>No, Cancel</Button>
+            <Button onClick={finalizeSale}>Yes, Proceed</Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

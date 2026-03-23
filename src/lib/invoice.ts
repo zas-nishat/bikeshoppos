@@ -1,7 +1,8 @@
 import jsPDF from 'jspdf';
+import QRCode from 'qrcode';
 import type { Sale } from '@/types';
 
-export function generateInvoicePDF(sale: Sale) {
+export async function generateInvoicePDF(sale: Sale) {
   const doc = new jsPDF();
   const w = doc.internal.pageSize.getWidth();
 
@@ -26,11 +27,30 @@ export function generateInvoicePDF(sale: Sale) {
   doc.text(`Payment: ${sale.paymentType.toUpperCase()}`, 14, 68);
 
   // Line
+  let y = 73;
+  if (sale.soldBy) {
+    doc.text(`Sold By: ${sale.soldBy} ${sale.soldByPhone ? `(${sale.soldByPhone})` : ''}`, 14, 74);
+    y = 80;
+  }
+
+  try {
+    const qrData = JSON.stringify({
+      Invoice: `INV-${sale.id.toUpperCase()}`,
+      Date: new Date(sale.date).toLocaleDateString(),
+      Total: sale.grandTotal,
+      SoldBy: sale.soldBy || 'N/A'
+    });
+    const qrImage = await QRCode.toDataURL(qrData);
+    doc.addImage(qrImage, 'PNG', w - 44, 40, 30, 30);
+  } catch (err) {
+    console.error('Failed to generate QR code', err);
+  }
+
   doc.setDrawColor(200);
-  doc.line(14, 73, w - 14, 73);
+  doc.line(14, y, w - 14, y);
 
   // Table header
-  let y = 80;
+  y += 7;
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9);
   doc.text('Item', 14, y);
@@ -84,13 +104,13 @@ export function generateInvoicePDF(sale: Sale) {
   return doc;
 }
 
-export function downloadInvoice(sale: Sale) {
-  const doc = generateInvoicePDF(sale);
+export async function downloadInvoice(sale: Sale) {
+  const doc = await generateInvoicePDF(sale);
   doc.save(`invoice-${sale.id}.pdf`);
 }
 
-export function printInvoice(sale: Sale) {
-  const doc = generateInvoicePDF(sale);
+export async function printInvoice(sale: Sale) {
+  const doc = await generateInvoicePDF(sale);
   const blob = doc.output('blob');
   const url = URL.createObjectURL(blob);
   const win = window.open(url);

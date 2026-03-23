@@ -38,6 +38,8 @@ export interface Sale {
   grandTotal: number;
   paymentType: PaymentType;
   date: string;
+  soldBy?: string;
+  soldByPhone?: string;
 }
 
 export interface EMI {
