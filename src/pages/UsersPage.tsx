@@ -68,7 +68,7 @@ export default function UsersPage() {
         );
     }
 
-    const handleCreateUser = (e: React.FormEvent) => {
+    const handleCreateUser = async (e: React.FormEvent) => {
         e.preventDefault();
 
         if (!newName.trim()) {
@@ -91,7 +91,7 @@ export default function UsersPage() {
             return;
         }
 
-        const result = register(newName, newEmail, newPassword, newPhone, newRole);
+        const result = await register(newName, newEmail, newPassword, newPhone, newRole);
 
         if (result.success) {
             toast.success(`User "${newName}" created successfully`);
@@ -106,9 +106,9 @@ export default function UsersPage() {
         }
     };
 
-    const handleDeleteUser = () => {
+    const handleDeleteUser = async () => {
         if (userToDelete) {
-            const result = deleteUser(userToDelete.id);
+            const result = await deleteUser(userToDelete.id);
             if (result.success) {
                 toast.success(`User "${userToDelete.name}" deleted successfully`);
                 setDeleteConfirmOpen(false);
@@ -131,7 +131,7 @@ export default function UsersPage() {
         }
     };
 
-    const handleUpdateProfile = (e: React.FormEvent) => {
+    const handleUpdateProfile = async (e: React.FormEvent) => {
         e.preventDefault();
 
         if (!editName.trim()) {
@@ -154,7 +154,7 @@ export default function UsersPage() {
             return;
         }
 
-        const result = updateUser(currentUser.id, {
+        const result = await updateUser(currentUser.id, {
             name: editName,
             phone: editPhone,
             password: editPassword || undefined,

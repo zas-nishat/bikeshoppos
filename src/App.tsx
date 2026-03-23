@@ -32,11 +32,15 @@ function ProtectedRoute({ page, children }: { page: string; children: React.Reac
 }
 
 function AppContent() {
-  const { currentUser, darkMode } = useStore();
+  const { currentUser, darkMode, initializeSupabase } = useStore();
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', darkMode);
   }, [darkMode]);
+
+  useEffect(() => {
+    initializeSupabase();
+  }, [initializeSupabase]);
 
   if (!currentUser) return <LoginPage />;
 

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { Bike, Customer, Sale, EMI, Expense, CartItem, UserRole, UserAccount, StockLog } from '@/types';
+import { supabase } from '@/lib/supabase';
 
 const generateId = () => Math.random().toString(36).substring(2, 10);
 
@@ -35,35 +36,35 @@ const seedEMIs: EMI[] = [
 ];
 
 const seedAccounts: UserAccount[] = [
-  { id: '1', name: 'Admin User', email: 'admin@bikehub.com', password: 'admin123', phone: '01700000001', role: 'admin', createdAt: new Date().toISOString() },
-  { id: '2', name: 'Store Manager', email: 'manager@bikehub.com', password: 'manager123', phone: '01700000002', role: 'manager', createdAt: new Date().toISOString() },
-  { id: '3', name: 'Sales Staff', email: 'sales@bikehub.com', password: 'sales123', phone: '01700000003', role: 'salesman', createdAt: new Date().toISOString() },
+  { id: '1', name: 'Admin', email: 'admin@bikehub.com', password: 'admin123', phone: '01700000001', role: 'admin', createdAt: new Date().toISOString() },
+  { id: '2', name: 'Manager', email: 'manager@bikehub.com', password: 'manager123', phone: '01700000002', role: 'manager', createdAt: new Date().toISOString() },
+  { id: '3', name: 'Sales', email: 'sales@bikehub.com', password: 'sales123', phone: '01700000003', role: 'salesman', createdAt: new Date().toISOString() },
 ];
 
 interface AppState {
   // Auth
   currentUser: { id: string; name: string; role: UserRole } | null;
   accounts: UserAccount[];
-  register: (name: string, email: string, password: string, phone: string, role: UserRole) => { success: boolean; error?: string };
+  register: (name: string, email: string, password: string, phone: string, role: UserRole) => Promise<{ success: boolean; error?: string }>;
   loginWithCredentials: (email: string, password: string) => { success: boolean; error?: string };
-  updateUser: (userId: string, updates: { name?: string; phone?: string; password?: string }) => { success: boolean; error?: string };
-  deleteUser: (userId: string) => { success: boolean; error?: string };
+  updateUser: (userId: string, updates: { name?: string; phone?: string; password?: string }) => Promise<{ success: boolean; error?: string }>;
+  deleteUser: (userId: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   // Dark mode
   darkMode: boolean;
   toggleDarkMode: () => void;
   // Bikes
   bikes: Bike[];
-  addBike: (bike: Omit<Bike, 'id'>) => void;
-  updateBike: (id: string, bike: Partial<Bike>) => void;
-  deleteBike: (id: string) => void;
+  addBike: (bike: Omit<Bike, 'id'>) => Promise<void>;
+  updateBike: (id: string, bike: Partial<Bike>) => Promise<void>;
+  deleteBike: (id: string) => Promise<void>;
   // Customers
   customers: Customer[];
-  addCustomer: (c: Omit<Customer, 'id'>) => void;
-  updateCustomer: (id: string, c: Partial<Customer>) => void;
+  addCustomer: (c: Omit<Customer, 'id'>) => Promise<void>;
+  updateCustomer: (id: string, c: Partial<Customer>) => Promise<void>;
   // Sales
   sales: Sale[];
-  addSale: (s: Omit<Sale, 'id'>) => void;
+  addSale: (s: Omit<Sale, 'id'>) => Promise<void>;
   // Cart
   cart: CartItem[];
   addToCart: (bike: Bike) => void;
@@ -72,15 +73,17 @@ interface AppState {
   clearCart: () => void;
   // EMI
   emis: EMI[];
-  addEMI: (e: Omit<EMI, 'id'>) => void;
-  recordEMIPayment: (emiId: string, amount: number) => void;
+  addEMI: (e: Omit<EMI, 'id'>) => Promise<void>;
+  recordEMIPayment: (emiId: string, amount: number) => Promise<void>;
   // Expenses
   expenses: Expense[];
-  addExpense: (e: Omit<Expense, 'id'>) => void;
-  deleteExpense: (id: string) => void;
+  addExpense: (e: Omit<Expense, 'id'>) => Promise<void>;
+  deleteExpense: (id: string) => Promise<void>;
   // Stock log
   stockLogs: StockLog[];
-  addStockLog: (log: Omit<StockLog, 'id'>) => void;
+  addStockLog: (log: Omit<StockLog, 'id'>) => Promise<void>;
+
+  initializeSupabase: () => Promise<void>;
 }
 
 export const useStore = create<AppState>()(
@@ -88,7 +91,7 @@ export const useStore = create<AppState>()(
     (set, get) => ({
       currentUser: null,
       accounts: seedAccounts,
-      register: (name, email, password, phone, role) => {
+      register: async (name, email, password, phone, role) => {
         const state = get();
         if (state.accounts.find((a) => a.email.toLowerCase() === email.toLowerCase())) {
           return { success: false, error: 'Email already registered' };
@@ -98,6 +101,7 @@ export const useStore = create<AppState>()(
         }
         const account: UserAccount = { id: generateId(), name, email, password, phone, role, createdAt: new Date().toISOString() };
         set({ accounts: [...state.accounts, account] });
+        await supabase.from('accounts').insert([account]);
         return { success: true };
       },
       loginWithCredentials: (identifier, password) => {
@@ -111,7 +115,7 @@ export const useStore = create<AppState>()(
         set({ currentUser: { id: account.id, name: account.name, role: account.role } });
         return { success: true };
       },
-      deleteUser: (userId) => {
+      deleteUser: async (userId) => {
         const state = get();
         const currentUser = state.currentUser;
         const userToDelete = state.accounts.find((a) => a.id === userId);
@@ -122,9 +126,10 @@ export const useStore = create<AppState>()(
           return { success: false, error: 'Admin accounts can only be deleted by themselves' };
         }
         set({ accounts: state.accounts.filter((a) => a.id !== userId) });
+        await supabase.from('accounts').delete().eq('id', userId);
         return { success: true };
       },
-      updateUser: (userId, updates) => {
+      updateUser: async (userId, updates) => {
         const state = get();
         const userToUpdate = state.accounts.find((a) => a.id === userId);
         if (!userToUpdate) {
@@ -140,6 +145,7 @@ export const useStore = create<AppState>()(
           password: updates.password ?? userToUpdate.password,
         };
         set({ accounts: state.accounts.map((a) => (a.id === userId ? updated : a)) });
+        await supabase.from('accounts').update(updated).eq('id', userId);
         return { success: true };
       },
       logout: () => set({ currentUser: null }),
@@ -149,41 +155,67 @@ export const useStore = create<AppState>()(
         document.documentElement.classList.toggle('dark', next);
         return { darkMode: next };
       }),
-      bikes: seedBikes,
-      addBike: (bike) => set((s) => {
-        const newBike = { ...bike, id: generateId() };
-        return {
-          bikes: [...s.bikes, newBike],
-          stockLogs: [...s.stockLogs, { id: generateId(), bikeId: newBike.id, bikeName: newBike.name, type: 'restock' as const, quantity: newBike.stock, date: new Date().toISOString(), note: 'Initial stock' }],
-        };
-      }),
-      updateBike: (id, data) => set((s) => {
-        const old = s.bikes.find((b) => b.id === id);
-        const updated = s.bikes.map((b) => b.id === id ? { ...b, ...data } : b);
-        const newLogs = [...s.stockLogs];
-        if (old && data.stock !== undefined && data.stock !== old.stock) {
-          const diff = data.stock - old.stock;
-          newLogs.push({ id: generateId(), bikeId: id, bikeName: old.name, type: diff > 0 ? 'restock' : 'adjustment', quantity: diff, date: new Date().toISOString(), note: diff > 0 ? 'Stock added' : 'Stock adjusted' });
+
+      bikes: [],
+      addBike: async (bikeData) => {
+        const id = generateId();
+        const newBike = { ...bikeData, id };
+        set((state) => ({ bikes: [...state.bikes, newBike] }));
+        await supabase.from('bikes').insert([newBike]);
+      },
+      updateBike: async (id, updates) => {
+        set((state) => ({
+          bikes: state.bikes.map((b) => (b.id === id ? { ...b, ...updates } : b)),
+        }));
+        await supabase.from('bikes').update(updates).eq('id', id);
+      },
+      deleteBike: async (id) => {
+        set((state) => ({ bikes: state.bikes.filter((b) => b.id !== id) }));
+        await supabase.from('bikes').delete().eq('id', id);
+      },
+
+      // Customers
+      customers: [],
+      addCustomer: async (c) => {
+        const id = generateId();
+        const newCustomer = { ...c, id };
+        set((state) => ({ customers: [...state.customers, newCustomer] }));
+        await supabase.from('customers').insert([newCustomer]);
+      },
+      updateCustomer: async (id, c) => {
+        set((state) => ({
+          customers: state.customers.map((cust) => (cust.id === id ? { ...cust, ...c } : cust)),
+        }));
+        await supabase.from('customers').update(c).eq('id', id);
+      },
+
+      // Sales
+      sales: [],
+      addSale: async (s) => {
+        const id = generateId();
+        const newSale = { ...s, id };
+        set((state) => {
+          const updatedBikes = state.bikes.map((b) => {
+            const item = s.items.find((i) => i.bikeId === b.id);
+            return item ? { ...b, stock: Math.max(0, b.stock - item.quantity) } : b;
+          });
+          const newLogs = [...state.stockLogs];
+          s.items.forEach((item) => {
+            newLogs.push({ id: generateId(), bikeId: item.bikeId, bikeName: item.bikeName, type: 'sale', quantity: -item.quantity, date: new Date().toISOString(), note: `Sold to ${s.customerName}` });
+          });
+          return { sales: [...state.sales, newSale], bikes: updatedBikes, stockLogs: newLogs };
+        });
+
+        // Use Supabase directly mapping the structured payload
+        await supabase.from('sales').insert([{ ...newSale, items: undefined }]);
+
+        // Insert items independently if they prefer 1:N relations or use JSON. The schema defines sale_items array inside TS but references table. 
+        // Using sale_items relational mapping safely array:
+        const itemsToInsert = s.items.map(item => ({ ...item, saleId: id, id: generateId() }));
+        if (itemsToInsert.length > 0) {
+          await supabase.from('sale_items').insert(itemsToInsert);
         }
-        return { bikes: updated, stockLogs: newLogs };
-      }),
-      deleteBike: (id) => set((s) => ({ bikes: s.bikes.filter((b) => b.id !== id) })),
-      customers: seedCustomers,
-      addCustomer: (c) => set((s) => ({ customers: [...s.customers, { ...c, id: generateId() }] })),
-      updateCustomer: (id, data) => set((s) => ({ customers: s.customers.map((c) => c.id === id ? { ...c, ...data } : c) })),
-      sales: seedSales,
-      addSale: (s) => set((state) => {
-        const sale = { ...s, id: generateId() };
-        const updatedBikes = state.bikes.map((b) => {
-          const item = s.items.find((i) => i.bikeId === b.id);
-          return item ? { ...b, stock: Math.max(0, b.stock - item.quantity) } : b;
-        });
-        const newLogs = [...state.stockLogs];
-        s.items.forEach((item) => {
-          newLogs.push({ id: generateId(), bikeId: item.bikeId, bikeName: item.bikeName, type: 'sale', quantity: -item.quantity, date: new Date().toISOString(), note: `Sold to ${s.customerName}` });
-        });
-        return { sales: [...state.sales, sale], bikes: updatedBikes, stockLogs: newLogs };
-      }),
+      },
       cart: [],
       addToCart: (bike) => set((s) => {
         const existing = s.cart.find((c) => c.bike.id === bike.id);
@@ -197,21 +229,85 @@ export const useStore = create<AppState>()(
         cart: qty <= 0 ? s.cart.filter((c) => c.bike.id !== bikeId) : s.cart.map((c) => c.bike.id === bikeId ? { ...c, quantity: qty } : c),
       })),
       clearCart: () => set({ cart: [] }),
-      emis: seedEMIs,
-      addEMI: (e) => set((s) => ({ emis: [...s.emis, { ...e, id: generateId() }] })),
-      recordEMIPayment: (emiId, amount) => set((s) => ({
-        emis: s.emis.map((e) => e.id === emiId ? {
-          ...e,
-          paidAmount: e.paidAmount + amount,
-          dueAmount: e.dueAmount - amount,
-          payments: [...e.payments, { date: new Date().toISOString(), amount }],
-        } : e),
-      })),
-      expenses: seedExpenses,
-      addExpense: (e) => set((s) => ({ expenses: [...s.expenses, { ...e, id: generateId() }] })),
-      deleteExpense: (id) => set((s) => ({ expenses: s.expenses.filter((e) => e.id !== id) })),
+      // EMI
+      emis: [],
+      addEMI: async (e) => {
+        const id = generateId();
+        const newEmi = { ...e, id };
+        set((state) => ({ emis: [...state.emis, newEmi] }));
+        await supabase.from('emis').insert([newEmi]);
+      },
+      recordEMIPayment: async (emiId, amount) => {
+        const payment = { date: new Date().toISOString(), amount };
+        let updatedEmiData = null;
+
+        set((state) => ({
+          emis: state.emis.map((e) => {
+            if (e.id === emiId) {
+              updatedEmiData = { ...e, paidAmount: e.paidAmount + amount, dueAmount: e.dueAmount - amount, payments: [...e.payments, payment] };
+              return updatedEmiData as EMI;
+            }
+            return e;
+          }),
+        }));
+
+        if (updatedEmiData) await supabase.from('emis').update(updatedEmiData).eq('id', emiId);
+      },
+
+      // Expenses
+      expenses: [],
+      addExpense: async (e) => {
+        const id = generateId();
+        const newExpense = { ...e, id };
+        set((state) => ({ expenses: [...state.expenses, newExpense] }));
+        await supabase.from('expenses').insert([newExpense]);
+      },
+      deleteExpense: async (id) => {
+        set((state) => ({ expenses: state.expenses.filter((e) => e.id !== id) }));
+        await supabase.from('expenses').delete().eq('id', id);
+      },
+
+      // Stock
       stockLogs: [],
-      addStockLog: (log) => set((s) => ({ stockLogs: [...s.stockLogs, { ...log, id: generateId() }] })),
+      addStockLog: async (log) => {
+        const id = generateId();
+        const newLog = { ...log, id };
+        set((state) => ({ stockLogs: [newLog, ...state.stockLogs] }));
+        await supabase.from('stock_logs').insert([newLog]);
+      },
+
+      initializeSupabase: async () => {
+        try {
+          const [{ data: b }, { data: c }, { data: s }, { data: e }, { data: em }, { data: sl }, { data: ac }] = await Promise.all([
+            supabase.from('bikes').select('*'),
+            supabase.from('customers').select('*'),
+            supabase.from('sales').select('*'),
+            supabase.from('expenses').select('*'),
+            supabase.from('emis').select('*'),
+            supabase.from('stock_logs').select('*'),
+            supabase.from('accounts').select('*')
+          ]);
+          if (b?.length) set({ bikes: b as Bike[] });
+          if (c?.length) set({ customers: c as Customer[] });
+
+          if (s?.length) {
+            // Retrieve relational sale_items dynamically
+            const { data: si } = await supabase.from('sale_items').select('*');
+            const populatedSales = s.map((sale: any) => ({
+              ...sale, items: (si || []).filter((item: any) => item.saleId === sale.id)
+            }));
+            set({ sales: populatedSales as Sale[] });
+          }
+
+          if (e?.length) set({ expenses: e as Expense[] });
+          if (em?.length) set({ emis: em as EMI[] });
+          if (sl?.length) set({ stockLogs: sl as StockLog[] });
+          if (ac?.length) set({ accounts: ac as UserAccount[] });
+
+        } catch (err) {
+          console.error("Supabase Initialization Failed", err);
+        }
+      },
     }),
     { name: 'bike-pos-store' }
   )

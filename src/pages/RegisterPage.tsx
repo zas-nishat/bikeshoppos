@@ -21,13 +21,14 @@ export default function RegisterPage({ onBack }: Props) {
   const [role, setRole] = useState<UserRole>('salesman');
   const register = useStore((s) => s.register);
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (password !== confirmPassword) {
       toast.error('Passwords do not match');
       return;
     }
-    const result = register(name.trim(), email.trim(), password, role);
+    // Added empty string for phone to match the interface correctly
+    const result = await register(name.trim(), email.trim(), password, '', role);
     if (result.success) {
       toast.success('Account created! You are now logged in.');
     } else {
