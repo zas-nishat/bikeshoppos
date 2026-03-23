@@ -95,7 +95,7 @@ export const useStore = create<AppState>()(
           return { success: false, error: 'Password must be at least 6 characters' };
         }
         const account: UserAccount = { id: generateId(), name, email, password, role, createdAt: new Date().toISOString() };
-        set({ accounts: [...state.accounts, account], currentUser: { id: account.id, name, role } });
+        set({ accounts: [...state.accounts, account] });
         return { success: true };
       },
       loginWithCredentials: (identifier, password) => {

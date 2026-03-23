@@ -6,16 +6,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import RegisterPage from './RegisterPage';
 
 export default function LoginPage() {
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [showRegister, setShowRegister] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
   const loginWithCredentials = useStore((s) => s.loginWithCredentials);
-
-  if (showRegister) return <RegisterPage onBack={() => setShowRegister(false)} />;
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,6 +22,18 @@ export default function LoginPage() {
       toast.success('Welcome back!');
     } else {
       toast.error(result.error || 'Login failed');
+    }
+  };
+
+  const handleForgotPassword = (e: React.FormEvent) => {
+    e.preventDefault();
+    const account = useStore.getState().accounts.find((a) => a.email.toLowerCase() === forgotEmail.toLowerCase());
+    if (account) {
+      toast.success(`Password reset link sent to ${forgotEmail}`);
+      setShowForgotPassword(false);
+      setForgotEmail('');
+    } else {
+      toast.error('Email not found');
     }
   };
 
@@ -43,69 +53,99 @@ export default function LoginPage() {
             </svg>
           </div>
           <CardTitle className="text-lg">BikeHub POS</CardTitle>
-          <p className="text-xs text-muted-foreground">Sign in to your showroom</p>
+          <p className="text-xs text-muted-foreground">{showForgotPassword ? 'Reset your password' : 'Sign in to your showroom'}</p>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="identifier" className="text-xs">Email or Username</Label>
-              <Input
-                id="identifier"
-                type="text"
-                value={identifier}
-                onChange={(e) => setIdentifier(e.target.value)}
-                placeholder="you@example.com or your username"
-                required
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="password" className="text-xs">Password</Label>
-              <div className="relative">
+          {showForgotPassword ? (
+            <form onSubmit={handleForgotPassword} className="space-y-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="forgotEmail" className="text-xs">Email Address</Label>
                 <Input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
+                  id="forgotEmail"
+                  type="email"
+                  value={forgotEmail}
+                  onChange={(e) => setForgotEmail(e.target.value)}
+                  placeholder="you@example.com"
                   required
-                  className="pr-10"
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </div>
+              <Button type="submit" className="w-full" disabled={!forgotEmail}>Send Reset Link</Button>
+              <Button
+                type="button"
+                variant="ghost"
+                className="w-full"
+                onClick={() => {
+                  setShowForgotPassword(false);
+                  setForgotEmail('');
+                }}
+              >
+                Back to Sign In
+              </Button>
+            </form>
+          ) : (
+            <>
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="identifier" className="text-xs">Email or Username</Label>
+                  <Input
+                    id="identifier"
+                    type="text"
+                    value={identifier}
+                    onChange={(e) => setIdentifier(e.target.value)}
+                    placeholder="you@example.com or your username"
+                    required
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="password" className="text-xs">Password</Label>
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? 'text' : 'password'}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      required
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
+                <Button type="submit" className="w-full" disabled={!identifier || !password}>Sign In</Button>
+              </form>
+
+              <div className="mt-3 text-center">
+                <button onClick={() => setShowForgotPassword(true)} className="text-xs text-primary hover:underline">
+                  Forgot password?
                 </button>
               </div>
-            </div>
-            <Button type="submit" className="w-full" disabled={!identifier || !password}>Sign In</Button>
-          </form>
 
-          <div className="mt-3 text-center">
-            <button onClick={() => setShowRegister(true)} className="text-xs text-primary hover:underline">
-              Don't have an account? Create one
-            </button>
-          </div>
-
-          <div className="mt-4 pt-4 border-t">
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Demo Accounts (click to fill only)</p>
-            <div className="space-y-1.5">
-              {demoAccounts.map((a) => (
-                <button
-                  key={a.email}
-                  onClick={() => {
-                    setIdentifier(a.email);
-                    setPassword(a.password);
-                  }}
-                  className="w-full text-left px-3 py-2 rounded-md text-sm hover:bg-muted transition-colors active:scale-[0.98]"
-                >
-                  <span className="font-medium">{a.label}</span>
-                  <span className="text-muted-foreground ml-2 text-xs">({a.email})</span>
-                </button>
-              ))}
-            </div>
-          </div>
+              <div className="mt-4 pt-4 border-t">
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Demo Accounts (click to fill only)</p>
+                <div className="space-y-1.5">
+                  {demoAccounts.map((a) => (
+                    <button
+                      key={a.email}
+                      onClick={() => {
+                        setIdentifier(a.email);
+                        setPassword(a.password);
+                      }}
+                      className="w-full text-left px-3 py-2 rounded-md text-sm hover:bg-muted transition-colors active:scale-[0.98]"
+                    >
+                      <span className="font-medium">{a.label}</span>
+                      <span className="text-muted-foreground ml-2 text-xs">({a.email})</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
     </div>

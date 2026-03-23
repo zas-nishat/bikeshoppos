@@ -15,6 +15,7 @@ import EMIPage from "./pages/EMIPage";
 import InventoryPage from "./pages/InventoryPage";
 import ExpensesPage from "./pages/ExpensesPage";
 import ReportsPage from "./pages/ReportsPage";
+import UsersPage from "./pages/UsersPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -57,6 +58,7 @@ function AppContent() {
         <Route path="/inventory" element={<ProtectedRoute page="inventory"><InventoryPage /></ProtectedRoute>} />
         <Route path="/expenses" element={<ProtectedRoute page="expenses"><ExpensesPage /></ProtectedRoute>} />
         <Route path="/reports" element={<ProtectedRoute page="reports"><ReportsPage /></ProtectedRoute>} />
+        <Route path="/users" element={<ProtectedRoute page="users"><UsersPage /></ProtectedRoute>} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </AppLayout>

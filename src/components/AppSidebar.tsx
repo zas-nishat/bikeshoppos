@@ -28,6 +28,7 @@ const navItems = [
   { title: 'Inventory', url: '/inventory', icon: Package, key: 'inventory' },
   { title: 'Expenses', url: '/expenses', icon: Wallet, key: 'expenses' },
   { title: 'Reports', url: '/reports', icon: BarChart3, key: 'reports' },
+  { title: 'Users', url: '/users', icon: Users, key: 'users' },
 ];
 
 export function AppSidebar() {

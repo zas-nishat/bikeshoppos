@@ -83,7 +83,7 @@ export interface StockLog {
 
 // Role-based permissions
 export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
-  admin: ['dashboard', 'pos', 'bikes', 'customers', 'emi', 'inventory', 'expenses', 'reports'],
+  admin: ['dashboard', 'pos', 'bikes', 'customers', 'emi', 'inventory', 'expenses', 'reports', 'users'],
   manager: ['dashboard', 'pos', 'bikes', 'customers', 'emi', 'inventory', 'expenses', 'reports'],
   salesman: ['dashboard', 'pos', 'customers', 'emi'],
 };
