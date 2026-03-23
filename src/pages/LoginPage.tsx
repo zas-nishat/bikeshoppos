@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 import RegisterPage from './RegisterPage';
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [showRegister, setShowRegister] = useState(false);
   const loginWithCredentials = useStore((s) => s.loginWithCredentials);
@@ -17,7 +17,7 @@ export default function LoginPage() {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    const result = loginWithCredentials(email, password);
+    const result = loginWithCredentials(identifier, password);
     if (result.success) {
       toast.success('Welcome back!');
     } else {
@@ -46,14 +46,21 @@ export default function LoginPage() {
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-1.5">
-              <Label htmlFor="email" className="text-xs">Email</Label>
-              <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" required />
+              <Label htmlFor="identifier" className="text-xs">Email or Username</Label>
+              <Input
+                id="identifier"
+                type="text"
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
+                placeholder="you@example.com or your username"
+                required
+              />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="password" className="text-xs">Password</Label>
               <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required />
             </div>
-            <Button type="submit" className="w-full" disabled={!email || !password}>Sign In</Button>
+            <Button type="submit" className="w-full" disabled={!identifier || !password}>Sign In</Button>
           </form>
 
           <div className="mt-3 text-center">
@@ -63,14 +70,14 @@ export default function LoginPage() {
           </div>
 
           <div className="mt-4 pt-4 border-t">
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Demo Accounts</p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Demo Accounts (click to fill only)</p>
             <div className="space-y-1.5">
               {demoAccounts.map((a) => (
                 <button
                   key={a.email}
                   onClick={() => {
-                    const result = loginWithCredentials(a.email, a.password);
-                    if (result.success) toast.success(`Logged in as ${a.label}`);
+                    setIdentifier(a.email);
+                    setPassword(a.password);
                   }}
                   className="w-full text-left px-3 py-2 rounded-md text-sm hover:bg-muted transition-colors active:scale-[0.98]"
                 >

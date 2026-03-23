@@ -98,10 +98,14 @@ export const useStore = create<AppState>()(
         set({ accounts: [...state.accounts, account], currentUser: { id: account.id, name, role } });
         return { success: true };
       },
-      loginWithCredentials: (email, password) => {
+      loginWithCredentials: (identifier, password) => {
         const state = get();
-        const account = state.accounts.find((a) => a.email.toLowerCase() === email.toLowerCase() && a.password === password);
-        if (!account) return { success: false, error: 'Invalid email or password' };
+        const account = state.accounts.find(
+          (a) =>
+            (a.email.toLowerCase() === identifier.toLowerCase() || a.name.toLowerCase() === identifier.toLowerCase()) &&
+            a.password === password,
+        );
+        if (!account) return { success: false, error: 'Invalid email/username or password' };
         set({ currentUser: { id: account.id, name: account.name, role: account.role } });
         return { success: true };
       },
