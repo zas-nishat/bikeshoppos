@@ -2,6 +2,9 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { Bike, Customer, Sale, EMI, Expense, CartItem, UserRole, UserAccount, StockLog } from '@/types';
 import { supabase } from '@/lib/supabase';
+import CryptoJS from 'crypto-js';
+
+const ENCRYPTION_KEY = 'bike-pos-secret-99'; // Same key for consistency
 
 const generateId = () => Math.random().toString(36).substring(2, 10);
 
@@ -82,8 +85,8 @@ interface AppState {
   // Stock log
   stockLogs: StockLog[];
   addStockLog: (log: Omit<StockLog, 'id'>) => Promise<void>;
-
   initializeSupabase: () => Promise<void>;
+  isInitialized: boolean;
 }
 
 export const useStore = create<AppState>()(
@@ -91,6 +94,7 @@ export const useStore = create<AppState>()(
     (set, get) => ({
       currentUser: null,
       accounts: seedAccounts,
+      isInitialized: false,
       register: async (name, email, password, phone, role) => {
         const state = get();
         if (state.accounts.some((a) => a.email.toLowerCase() === email.toLowerCase())) {
@@ -102,18 +106,30 @@ export const useStore = create<AppState>()(
         if (password.length < 6) {
           return { success: false, error: 'Password must be at least 6 characters' };
         }
-        const account: UserAccount = { id: generateId(), name, email, password, phone, role, createdAt: new Date().toISOString() };
+        // Encrypt password before saving
+        const encryptedPassword = CryptoJS.AES.encrypt(password, ENCRYPTION_KEY).toString();
+        const account: UserAccount = { id: generateId(), name, email, password: encryptedPassword, phone, role, createdAt: new Date().toISOString() };
         set({ accounts: [...state.accounts, account] });
         await supabase.from('accounts').insert([account]);
         return { success: true };
       },
       loginWithCredentials: (identifier, password) => {
         const state = get();
-        const account = state.accounts.find(
-          (a) =>
-            (a.email.toLowerCase() === identifier.toLowerCase() || a.name.toLowerCase() === identifier.toLowerCase()) &&
-            a.password === password,
-        );
+        // If not initialized yet, we only have seed accounts. 
+        // We still search, but it might fail if they aren't in seed.
+        const account = state.accounts.find((a) => {
+           let decryptedPass = '';
+           try {
+             const bytes = CryptoJS.AES.decrypt(a.password, ENCRYPTION_KEY);
+             decryptedPass = bytes.toString(CryptoJS.enc.Utf8);
+             // Fallback if decryption result is unexpectedly empty (like if pass was plain text)
+             if (!decryptedPass) decryptedPass = a.password;
+           } catch {
+             decryptedPass = a.password;
+           }
+           return (a.email.toLowerCase() === identifier.toLowerCase() || a.name.toLowerCase() === identifier.toLowerCase()) &&
+                  decryptedPass === password;
+        });
         if (!account) return { success: false, error: 'Invalid email/username or password' };
         set({ currentUser: { id: account.id, name: account.name, role: account.role } });
         return { success: true };
@@ -150,12 +166,15 @@ export const useStore = create<AppState>()(
         if (updates.password && updates.password.length < 6) {
           return { success: false, error: 'Password must be at least 6 characters' };
         }
+
+        const encryptedPassword = updates.password ? CryptoJS.AES.encrypt(updates.password, ENCRYPTION_KEY).toString() : userToUpdate.password;
+        
         const updated = {
           ...userToUpdate,
           name: updates.name ?? userToUpdate.name,
           email: updates.email ?? userToUpdate.email,
           phone: updates.phone ?? userToUpdate.phone,
-          password: updates.password ?? userToUpdate.password,
+          password: encryptedPassword,
         };
         set({ accounts: state.accounts.map((a) => (a.id === userId ? updated : a)) });
         await supabase.from('accounts').update(updated).eq('id', userId);
@@ -340,12 +359,40 @@ export const useStore = create<AppState>()(
           if (em?.length) set({ emis: em as EMI[] });
           if (sl?.length) set({ stockLogs: sl as StockLog[] });
           if (ac?.length) set({ accounts: ac as UserAccount[] });
-
+          set({ isInitialized: true });
         } catch (err) {
           console.error("Supabase Initialization Failed", err);
+          set({ isInitialized: true });
         }
       },
     }),
-    { name: 'bike-pos-store' }
+    { 
+      name: 'bike-pos-store',
+      // Only persist currentUser and darkMode
+      partialize: (state) => ({ 
+        currentUser: state.currentUser, 
+        darkMode: state.darkMode 
+      }),
+      // Custom encrypted storage for localStorage
+      storage: {
+        getItem: (name) => {
+          const encrypted = localStorage.getItem(name);
+          if (!encrypted) return null;
+          try {
+            const bytes = CryptoJS.AES.decrypt(encrypted, ENCRYPTION_KEY);
+            const decryptedString = bytes.toString(CryptoJS.enc.Utf8);
+            if (!decryptedString) return null;
+            return JSON.parse(decryptedString);
+          } catch (e) {
+            return null;
+          }
+        },
+        setItem: (name, value) => {
+          const encrypted = CryptoJS.AES.encrypt(JSON.stringify(value), ENCRYPTION_KEY).toString();
+          localStorage.setItem(name, encrypted);
+        },
+        removeItem: (name) => localStorage.removeItem(name),
+      }
+    }
   )
 );

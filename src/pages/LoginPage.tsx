@@ -13,7 +13,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [forgotEmail, setForgotEmail] = useState('');
-  const loginWithCredentials = useStore((s) => s.loginWithCredentials);
+  const { loginWithCredentials, isInitialized } = useStore();
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,6 +56,12 @@ export default function LoginPage() {
           <p className="text-xs text-muted-foreground">{showForgotPassword ? 'Reset your password' : 'Sign in to your showroom'}</p>
         </CardHeader>
         <CardContent>
+          {!isInitialized && (
+             <div className="flex flex-col items-center justify-center py-4 space-y-2 text-muted-foreground animate-pulse">
+               <div className="h-4 w-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+               <p className="text-[10px]">Syncing data from database...</p>
+             </div>
+          )}
           {showForgotPassword ? (
             <form onSubmit={handleForgotPassword} className="space-y-4">
               <div className="space-y-1.5">
@@ -117,7 +123,9 @@ export default function LoginPage() {
                     </button>
                   </div>
                 </div>
-                <Button type="submit" className="w-full" disabled={!identifier || !password}>Sign In</Button>
+                <Button type="submit" className="w-full" disabled={!identifier || !password || !isInitialized}>
+                  {!isInitialized ? 'Syncing...' : 'Sign In'}
+                </Button>
               </form>
 
               <div className="mt-3 text-center">
