@@ -125,25 +125,6 @@ export default function LoginPage() {
                   Forgot password?
                 </button>
               </div>
-
-              <div className="mt-4 pt-4 border-t">
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Demo Accounts (click to fill only)</p>
-                <div className="space-y-1.5">
-                  {demoAccounts.map((a) => (
-                    <button
-                      key={a.email}
-                      onClick={() => {
-                        setIdentifier(a.email);
-                        setPassword(a.password);
-                      }}
-                      className="w-full text-left px-3 py-2 rounded-md text-sm hover:bg-muted transition-colors active:scale-[0.98]"
-                    >
-                      <span className="font-medium">{a.label}</span>
-                      <span className="text-muted-foreground ml-2 text-xs">({a.email})</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
             </>
           )}
         </CardContent>
