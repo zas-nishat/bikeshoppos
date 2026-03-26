@@ -56,12 +56,12 @@ export default function LoginPage() {
           <p className="text-xs text-muted-foreground">{showForgotPassword ? 'Reset your password' : 'Sign in to your showroom'}</p>
         </CardHeader>
         <CardContent>
-          {!isInitialized && (
+          {/* {!isInitialized && (
              <div className="flex flex-col items-center justify-center py-4 space-y-2 text-muted-foreground animate-pulse">
                <div className="h-4 w-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                <p className="text-[10px]">Syncing data from database...</p>
              </div>
-          )}
+          )} */}
           {showForgotPassword ? (
             <form onSubmit={handleForgotPassword} className="space-y-4">
               <div className="space-y-1.5">
