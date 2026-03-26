@@ -150,7 +150,15 @@ export default function POSPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[60vh] overflow-auto scrollbar-thin pr-1">
             {filteredBikes.map((b) => (
               <Card key={b.id} className="shadow-sm hover:shadow-md transition-shadow cursor-pointer active:scale-[0.98]" onClick={() => {
-                addToCart(b); toast.info(`${b.name} added to cart`, {
+                const cartItem = cart.find(item => item.bike.id === b.id);
+                const currentQty = cartItem ? cartItem.quantity : 0;
+
+                if (currentQty >= b.stock) {
+                  toast.error(`Out of stock! Only ${b.stock} units available.`);
+                  return;
+                }
+                addToCart(b);
+                toast.info(`${b.name} added to cart`, {
                   position: 'top-right',
                 });
               }}>
@@ -206,7 +214,18 @@ export default function POSPage() {
                           <Minus className="h-3 w-3" />
                         </Button>
                         <span className="w-6 text-center text-xs font-medium">{item.quantity}</span>
-                        <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => updateCartQuantity(item.bike.id, item.quantity + 1)}>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7"
+                          onClick={() => {
+                            if (item.quantity >= item.bike.stock) {
+                              toast.error("Stock limit reached!");
+                            } else {
+                              updateCartQuantity(item.bike.id, item.quantity + 1);
+                            }
+                          }}
+                        >
                           <Plus className="h-3 w-3" />
                         </Button>
                         <Button size="icon" variant="ghost" className="h-6 w-6 text-destructive" onClick={() => {
