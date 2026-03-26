@@ -33,9 +33,23 @@ export default function POSPage() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const filteredBikes = bikes.filter((b) =>
-    b.stock > 0 && `${b.name} ${b.brand} ${b.model}`.toLowerCase().includes(search.toLowerCase())
-  );
+  // নতুন ফিল্টার স্টেট
+  const [absFilter, setAbsFilter] = useState<string>('all');
+  const [brakeFilter, setBrakeFilter] = useState<string>('all');
+
+  // ফিল্টার লজিক (আপনার SQL Schema অনুযায়ী আপডেট করা)
+  const filteredBikes = bikes.filter((b) => {
+    const matchesSearch = `${b.name} ${b.brand} ${b.model}`.toLowerCase().includes(search.toLowerCase());
+
+    // ABS ফিল্টার লজিক
+    const matchesAbs = absFilter === 'all' ||
+      (absFilter === 'yes' ? b.abs === true : b.abs === false);
+
+    // Brake Type ফিল্টার লজিক
+    const matchesBrake = brakeFilter === 'all' || b.brakeType === brakeFilter;
+
+    return b.stock > 0 && matchesSearch && matchesAbs && matchesBrake;
+  });
 
   const subtotal = cart.reduce((sum, c) => sum + c.bike.sellingPrice * c.quantity, 0);
   const discountAmount = discountType === 'percentage' ? subtotal * (discount / 100) : discount;
@@ -147,6 +161,39 @@ export default function POSPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input placeholder="Search bikes by name or model..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
           </div>
+
+          {/* নতুন ফিল্টার UI সেকশন */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <Label className="text-[10px] uppercase font-bold text-muted-foreground">ABS System</Label>
+              <Select value={absFilter} onValueChange={setAbsFilter}>
+                <SelectTrigger className="h-9 text-xs">
+                  <SelectValue placeholder="ABS" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All ABS</SelectItem>
+                  <SelectItem value="yes">With ABS</SelectItem>
+                  <SelectItem value="no">No ABS</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1">
+              <Label className="text-[10px] uppercase font-bold text-muted-foreground">Brake Type</Label>
+              <Select value={brakeFilter} onValueChange={setBrakeFilter}>
+                <SelectTrigger className="h-9 text-xs">
+                  <SelectValue placeholder="Brake" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Brakes</SelectItem>
+                  <SelectItem value="Single Disc">Single Disc</SelectItem>
+                  <SelectItem value="Dual Disc">Dual Disc</SelectItem>
+                  <SelectItem value="Drum">Drum</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[60vh] overflow-auto scrollbar-thin pr-1">
             {filteredBikes.map((b) => (
               <Card key={b.id} className="shadow-sm hover:shadow-md transition-shadow cursor-pointer active:scale-[0.98]" onClick={() => {
@@ -180,7 +227,7 @@ export default function POSPage() {
               <div className="col-span-2 text-center py-12 text-muted-foreground">
                 <ShoppingCart className="h-8 w-8 mx-auto mb-2 opacity-30" />
                 <p className="text-sm">No bikes available</p>
-                <p className="text-xs mt-1">Try a different search term</p>
+                <p className="text-xs mt-1">Try a different filter or search term</p>
               </div>
             )}
           </div>
@@ -229,11 +276,10 @@ export default function POSPage() {
                           <Plus className="h-3 w-3" />
                         </Button>
                         <Button size="icon" variant="ghost" className="h-6 w-6 text-destructive" onClick={() => {
-                          removeFromCart(item.bike.id); toast.info('Removed from cart', {
+                          removeFromCart(item.bike.id);
+                          toast.info('Removed from cart', {
                             position: 'top-right',
-                            style: {
-                              color: 'red',
-                            }
+                            style: { color: 'red' }
                           });
                         }}>
                           <Trash2 className="h-3 w-3" />
@@ -323,9 +369,6 @@ export default function POSPage() {
               <div className="bg-muted/50 rounded-lg p-4 space-y-2 text-sm">
                 <div className="flex justify-between"><span className="text-muted-foreground">Date</span><span className="font-medium">{formatDateTime(lastSale.date)}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Customer</span><span className="font-medium">{lastSale.customerName}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Sold By</span><span className="font-medium">{lastSale.soldBy || 'N/A'}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Items</span><span>{lastSale.items.length}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Payment</span><span className="capitalize">{lastSale.paymentType}</span></div>
                 <div className="flex justify-between font-bold text-base border-t pt-2"><span>Total</span><span>৳{lastSale.grandTotal.toLocaleString()}</span></div>
               </div>
               <div className="flex gap-2">
