@@ -84,10 +84,10 @@ export default function POSPage() {
       customerPhone,
       customerAddress,
       customerEmail,
-      items: cart.map((c) => ({ 
-        bikeId: c.bike.id, 
-        bikeName: c.bike.name, 
-        quantity: c.quantity, 
+      items: cart.map((c) => ({
+        bikeId: c.bike.id,
+        bikeName: c.bike.name,
+        quantity: c.quantity,
         unitPrice: c.bike.sellingPrice,
         brand: c.bike.brand,
         model: c.bike.model,
@@ -149,7 +149,11 @@ export default function POSPage() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[60vh] overflow-auto scrollbar-thin pr-1">
             {filteredBikes.map((b) => (
-              <Card key={b.id} className="shadow-sm hover:shadow-md transition-shadow cursor-pointer active:scale-[0.98]" onClick={() => { addToCart(b); toast.info(`${b.name} added to cart`); }}>
+              <Card key={b.id} className="shadow-sm hover:shadow-md transition-shadow cursor-pointer active:scale-[0.98]" onClick={() => {
+                addToCart(b); toast.info(`${b.name} added to cart`, {
+                  position: 'top-right',
+                });
+              }}>
                 <CardContent className="p-3">
                   <div className="flex justify-between items-start">
                     <div>
@@ -205,7 +209,14 @@ export default function POSPage() {
                         <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => updateCartQuantity(item.bike.id, item.quantity + 1)}>
                           <Plus className="h-3 w-3" />
                         </Button>
-                        <Button size="icon" variant="ghost" className="h-6 w-6 text-destructive" onClick={() => { removeFromCart(item.bike.id); toast.info('Removed from cart'); }}>
+                        <Button size="icon" variant="ghost" className="h-6 w-6 text-destructive" onClick={() => {
+                          removeFromCart(item.bike.id); toast.info('Removed from cart', {
+                            position: 'top-right',
+                            style: {
+                              color: 'red',
+                            }
+                          });
+                        }}>
                           <Trash2 className="h-3 w-3" />
                         </Button>
                       </div>
