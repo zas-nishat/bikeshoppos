@@ -23,7 +23,6 @@ function BikeForm({ bike, onSubmit, onClose, isUpdating = false }: { bike?: Bike
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (isUpdating && bike) {
-      // For updates, we'll trigger the confirmation dialog in BikesPage
       onSubmit(form);
     } else {
       onSubmit(form);
@@ -34,14 +33,77 @@ function BikeForm({ bike, onSubmit, onClose, isUpdating = false }: { bike?: Bike
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
       <div className="grid grid-cols-2 gap-3">
-        <div><Label className="text-xs">Name</Label><Input value={form.name} onChange={(e) => set('name', e.target.value)} required /></div>
-        <div><Label className="text-xs">Brand</Label><Input value={form.brand} onChange={(e) => set('brand', e.target.value)} required /></div>
-        <div><Label className="text-xs">Model</Label><Input value={form.model} onChange={(e) => set('model', e.target.value)} required /></div>
-        <div><Label className="text-xs">Engine CC</Label><Input type="number" value={form.engineCC} onChange={(e) => set('engineCC', +e.target.value)} /></div>
-        <div><Label className="text-xs">Color</Label><Input value={form.color} onChange={(e) => set('color', e.target.value)} /></div>
-        <div><Label className="text-xs">Stock</Label><Input type="number" value={form.stock} onChange={(e) => set('stock', +e.target.value)} /></div>
-        <div><Label className="text-xs">Purchase Price</Label><Input type="number" value={form.purchasePrice} onChange={(e) => set('purchasePrice', +e.target.value)} /></div>
-        <div><Label className="text-xs">Selling Price</Label><Input type="number" value={form.sellingPrice} onChange={(e) => set('sellingPrice', +e.target.value)} /></div>
+        <div>
+          <Label className="text-xs">Name</Label>
+          <Input
+            value={form.name}
+            onChange={(e) => set('name', e.target.value)}
+            placeholder="Yamaha R1M"
+            required
+          />
+        </div>
+        <div>
+          <Label className="text-xs">Brand</Label>
+          <Input
+            value={form.brand}
+            onChange={(e) => set('brand', e.target.value)}
+            placeholder="Yamaha"
+            required
+          />
+        </div>
+        <div>
+          <Label className="text-xs">Model</Label>
+          <Input
+            value={form.model}
+            onChange={(e) => set('model', e.target.value)}
+            placeholder="2024, V4, ABS"
+            required
+          />
+        </div>
+        <div>
+          <Label className="text-xs">Engine CC</Label>
+          <Input
+            type="number"
+            value={form.engineCC || ''}
+            onChange={(e) => set('engineCC', +e.target.value)}
+            placeholder="155"
+          />
+        </div>
+        <div>
+          <Label className="text-xs">Color</Label>
+          <Input
+            value={form.color}
+            onChange={(e) => set('color', e.target.value)}
+            placeholder="Matte Black, Red"
+          />
+        </div>
+        <div>
+          <Label className="text-xs">Stock</Label>
+          <Input
+            type="number"
+            value={form.stock || ''}
+            onChange={(e) => set('stock', +e.target.value)}
+            placeholder="5"
+          />
+        </div>
+        <div>
+          <Label className="text-xs">Purchase Price</Label>
+          <Input
+            type="number"
+            value={form.purchasePrice || ''}
+            onChange={(e) => set('purchasePrice', +e.target.value)}
+            placeholder="150000"
+          />
+        </div>
+        <div>
+          <Label className="text-xs">Selling Price</Label>
+          <Input
+            type="number"
+            value={form.sellingPrice || ''}
+            onChange={(e) => set('sellingPrice', +e.target.value)}
+            placeholder="175000"
+          />
+        </div>
       </div>
       <div className="flex justify-end gap-2 pt-2">
         <Button type="button" variant="outline" size="sm" onClick={onClose}>Cancel</Button>
