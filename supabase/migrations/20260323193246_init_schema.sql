@@ -40,7 +40,9 @@ CREATE TABLE bikes (
   "purchasePrice" NUMERIC,
   "sellingPrice" NUMERIC NOT NULL,
   stock INTEGER DEFAULT 0,
-  image TEXT
+  "brakeType" TEXT CHECK ("brakeType" IN ('Single Disc', 'Dual Disc', 'Drum')),
+  abs BOOLEAN DEFAULT FALSE,
+  condition TEXT DEFAULT 'New' CHECK (condition IN ('New', 'Used', 'Refurbished'))
 );
 
 -- Create Sales Table

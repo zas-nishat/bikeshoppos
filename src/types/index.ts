@@ -8,7 +8,9 @@ export interface Bike {
   purchasePrice: number;
   sellingPrice: number;
   stock: number;
-  image: string;
+  brakeType?: 'Single Disc' | 'Dual Disc' | 'Drum';
+  abs?: boolean;
+  condition?: 'New' | 'Used' | 'Refurbished';
 }
 
 export interface Customer {
@@ -36,10 +38,10 @@ export interface Sale {
   customerPhone?: string;
   customerAddress?: string;
   customerEmail?: string;
-  items: { 
-    bikeId: string; 
-    bikeName: string; 
-    quantity: number; 
+  items: {
+    bikeId: string;
+    bikeName: string;
+    quantity: number;
     unitPrice: number;
     brand: string;
     model: string;

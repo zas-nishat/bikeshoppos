@@ -83,11 +83,6 @@ export default function CustomersPage() {
           <Users className="h-12 w-12 mx-auto mb-3 opacity-30" />
           <p className="font-medium">No customers found</p>
           <p className="text-sm mt-1">{customers.length === 0 ? 'Add your first customer' : 'Try a different search'}</p>
-          {customers.length === 0 && (
-            <Button size="sm" className="mt-3" onClick={() => navigate('/new-customer')}>
-              <Plus className="h-4 w-4 mr-1" /> Add First Customer
-            </Button>
-          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
