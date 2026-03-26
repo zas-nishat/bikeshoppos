@@ -1,9 +1,11 @@
+import { useState } from 'react';
 import { useStore } from '@/store/useStore';
 import { PageHeader } from '@/components/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { Download, FileText } from 'lucide-react';
+import { Download, FileText, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import { exportSalesReportPDF, exportProfitLossPDF, exportSalesExcel } from '@/lib/export';
 
@@ -11,7 +13,9 @@ const COLORS = ['hsl(349,89%,50%)', 'hsl(32,95%,52%)', 'hsl(152,60%,40%)', 'hsl(
 
 export default function ReportsPage() {
   const { sales, bikes, expenses } = useStore();
+  const [searchQuery, setSearchQuery] = useState('');
 
+  // Calculations
   const totalRevenue = sales.reduce((s, x) => s + x.grandTotal, 0);
   const totalCost = sales.reduce((s, x) => {
     return s + x.items.reduce((is, item) => {
@@ -31,11 +35,6 @@ export default function ReportsPage() {
   }));
   const topBikes = Object.values(bikeSalesMap).sort((a, b) => b.count - a.count).slice(0, 5);
 
-  // Expense breakdown
-  const expenseByCategory: Record<string, number> = {};
-  expenses.forEach((e) => { expenseByCategory[e.category] = (expenseByCategory[e.category] || 0) + e.amount; });
-  const expensePie = Object.entries(expenseByCategory).map(([name, value]) => ({ name, value }));
-
   // Payment type breakdown
   const paymentBreakdown: Record<string, number> = {};
   sales.forEach((s) => { paymentBreakdown[s.paymentType] = (paymentBreakdown[s.paymentType] || 0) + s.grandTotal; });
@@ -47,10 +46,16 @@ export default function ReportsPage() {
   const todaySales = sales.filter((s) => new Date(s.date).toDateString() === today);
   const monthlySales = sales.filter((s) => new Date(s.date).getMonth() === thisMonth);
 
-  // Recent sold items with buyer and bike details
-  const recentSales = [...sales]
+  // Filtered recent sales based on search
+  const filteredSales = sales.filter((sale) =>
+    sale.customerName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    sale.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    sale.customerPhone?.includes(searchQuery)
+  );
+
+  const recentSales = [...filteredSales]
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-    .slice(0, 6);
+    .slice(0, 10);
 
   return (
     <div>
@@ -93,41 +98,20 @@ export default function ReportsPage() {
             {topBikes.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <p className="text-sm">No sales data yet</p>
-                <p className="text-xs mt-1">Complete a sale to see analytics</p>
               </div>
             ) : (
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={topBikes} layout="vertical">
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                    <XAxis type="number" tick={{ fontSize: 11 }} allowDecimals={false} />
-                    <YAxis dataKey="name" type="category" width={120} tick={{ fontSize: 11 }} />
-                    <Tooltip />
-                    <Bar dataKey="count" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                  {/* layout="vertical" removed for vertical bars */}
+                  <BarChart data={topBikes}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-border" vertical={false} />
+                    {/* XAxis now shows the names, YAxis shows numbers */}
+                    <XAxis dataKey="name" tick={{ fontSize: 10 }} interval={0} />
+                    <YAxis type="number" tick={{ fontSize: 11 }} allowDecimals={false} width={30} />
+                    <Tooltip cursor={{ fill: 'transparent' }} />
+                    {/* barSize={25} is slightly thicker for vertical view but still sleek, radius is only on top */}
+                    <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} barSize={25} />
                   </BarChart>
-                </ResponsiveContainer>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-sm animate-fade-in" style={{ animationDelay: '320ms' }}>
-          <CardHeader className="pb-2"><CardTitle className="text-sm">Expense Breakdown</CardTitle></CardHeader>
-          <CardContent>
-            {expensePie.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <p className="text-sm">No expenses recorded</p>
-                <p className="text-xs mt-1">Add expenses to see the breakdown</p>
-              </div>
-            ) : (
-              <div className="h-64 flex items-center justify-center">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie data={expensePie} cx="50%" cy="50%" outerRadius={80} dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false}>
-                      {expensePie.map((_, idx) => <Cell key={idx} fill={COLORS[idx % COLORS.length]} />)}
-                    </Pie>
-                    <Tooltip formatter={(v: number) => `৳${v.toLocaleString()}`} />
-                  </PieChart>
                 </ResponsiveContainer>
               </div>
             )}
@@ -159,15 +143,25 @@ export default function ReportsPage() {
 
       <div className="mt-6">
         <Card className="shadow-sm">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Recent Sales</CardTitle>
-            <p className="text-xs text-muted-foreground">Latest sold invoices with bike and buyer details</p>
+          <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
+            <div>
+              <CardTitle className="text-sm">Recent Sales</CardTitle>
+              <p className="text-xs text-muted-foreground">Latest sold invoices</p>
+            </div>
+            <div className="relative w-full max-w-sm ml-4">
+              <Input
+                type="search"
+                placeholder="Search by customer or invoice..."
+                className="pl-1 h-9 text-xs"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
           </CardHeader>
           <CardContent>
             {recentSales.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                <p className="text-sm">No recent sales yet</p>
-                <p className="text-xs mt-1">Complete a sale in POS to see it here</p>
+                <p className="text-sm">No sales found</p>
               </div>
             ) : (
               <div className="space-y-3 max-h-[60vh] overflow-auto scrollbar-thin">
@@ -180,19 +174,13 @@ export default function ReportsPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs mt-2">
                       <div><span className="font-medium">Invoice ID:</span> {sale.id}</div>
                       <div><span className="font-medium">Total:</span> ৳{sale.grandTotal.toLocaleString()}</div>
-                      <div><span className="font-medium">Payment:</span> {sale.paymentType}</div>
-                      <div><span className="font-medium">Discount:</span> ৳{sale.discount.toLocaleString()}</div>
                     </div>
                     <div className="mt-2 text-xs">
-                      <p className="font-medium">Buyer Details</p>
-                      <p>{sale.customerPhone || 'Phone: N/A'} | {sale.customerAddress || 'Address: N/A'} | {sale.customerEmail || 'Email: N/A'}</p>
-                    </div>
-                    <div className="mt-2 text-xs">
-                      <p className="font-medium">Bikes Sold</p>
+                      <p className="font-medium text-muted-foreground">Bikes Sold</p>
                       <div className="space-y-1">
                         {sale.items.map((item) => (
-                          <div key={`${sale.id}-${item.bikeId}`} className="flex justify-between text-ssm">
-                            <span>{item.bikeName} ({item.brand} {item.model}, {item.color}, {item.engineCC}cc)</span>
+                          <div key={`${sale.id}-${item.bikeId}`} className="flex justify-between">
+                            <span>{item.bikeName} ({item.brand})</span>
                             <span>{item.quantity} × ৳{item.unitPrice.toLocaleString()}</span>
                           </div>
                         ))}
