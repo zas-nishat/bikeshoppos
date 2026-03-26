@@ -18,6 +18,8 @@ import { formatDateTime } from '@/lib/utils';
 export default function POSPage() {
   const navigate = useNavigate();
   const { bikes, customers, cart, addToCart, removeFromCart, updateCartQuantity, clearCart, addSale, addCustomer, addEMI, currentUser, accounts } = useStore();
+
+  // States
   const [search, setSearch] = useState('');
   const [customerId, setCustomerId] = useState('');
   const [discount, setDiscount] = useState(0);
@@ -40,22 +42,22 @@ export default function POSPage() {
   const [colorFilter, setColorFilter] = useState<string>('all');
   const [conditionFilter, setConditionFilter] = useState<string>('all');
 
+  // --- ডাইনামিক লিস্ট জেনারেশন (আপনার ডেটাবেজ থেকে) ---
+  const uniqueCCs = Array.from(new Set(bikes.map(b => b.engineCC).filter(Boolean))).sort((a, b) => Number(a) - Number(b));
+  const uniqueColors = Array.from(new Set(bikes.map(b => b.color).filter(Boolean)));
+  const uniqueConditions = Array.from(new Set(bikes.map(b => b.condition).filter(Boolean)));
+
   // ফিল্টার লজিক
   const filteredBikes = bikes.filter((b) => {
     const matchesSearch = `${b.name} ${b.brand} ${b.model}`.toLowerCase().includes(search.toLowerCase());
     const matchesAbs = absFilter === 'all' || (absFilter === 'yes' ? b.abs === true : b.abs === false);
     const matchesBrake = brakeFilter === 'all' || b.brakeType === brakeFilter;
-
-    // নতুন ফিল্টার কন্ডিশন
     const matchesCC = ccFilter === 'all' || b.engineCC?.toString() === ccFilter;
     const matchesColor = colorFilter === 'all' || b.color?.toLowerCase() === colorFilter.toLowerCase();
     const matchesCondition = conditionFilter === 'all' || b.condition === conditionFilter;
 
     return b.stock > 0 && matchesSearch && matchesAbs && matchesBrake && matchesCC && matchesColor && matchesCondition;
   });
-
-  // ইউনিক কালার লিস্ট বের করা (ফিল্টারের জন্য)
-  const uniqueColors = Array.from(new Set(bikes.map(b => b.color).filter(Boolean)));
 
   const subtotal = cart.reduce((sum, c) => sum + c.bike.sellingPrice * c.quantity, 0);
   const discountAmount = discountType === 'percentage' ? subtotal * (discount / 100) : discount;
@@ -168,7 +170,7 @@ export default function POSPage() {
             <Input placeholder="Search bikes by name or model..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
           </div>
 
-          {/* ফিল্টার UI সেকশন */}
+          {/* ফিল্টার UI সেকশন - ৫টি ফিল্টারই ডাইনামিক */}
           <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
             <div className="space-y-1">
               <Label className="text-[10px] uppercase font-bold text-muted-foreground">ABS</Label>
@@ -198,14 +200,12 @@ export default function POSPage() {
             <div className="space-y-1">
               <Label className="text-[10px] uppercase font-bold text-muted-foreground">Engine CC</Label>
               <Select value={ccFilter} onValueChange={setCcFilter}>
-                <SelectTrigger className="h-8 text-[11px]"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="h-8 text-[11px]"><SelectValue placeholder="All" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All</SelectItem>
-                  <SelectItem value="100">100cc</SelectItem>
-                  <SelectItem value="125">125cc</SelectItem>
-                  <SelectItem value="150">150cc</SelectItem>
-                  <SelectItem value="160">160cc</SelectItem>
-                  <SelectItem value="165">165cc</SelectItem>
+                  {uniqueCCs.map(cc => (
+                    <SelectItem key={cc} value={cc.toString()}>{cc}cc</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -213,7 +213,7 @@ export default function POSPage() {
             <div className="space-y-1">
               <Label className="text-[10px] uppercase font-bold text-muted-foreground">Color</Label>
               <Select value={colorFilter} onValueChange={setColorFilter}>
-                <SelectTrigger className="h-8 text-[11px]"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="h-8 text-[11px]"><SelectValue placeholder="All" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All</SelectItem>
                   {uniqueColors.map(c => (
@@ -226,12 +226,12 @@ export default function POSPage() {
             <div className="space-y-1">
               <Label className="text-[10px] uppercase font-bold text-muted-foreground">Cond.</Label>
               <Select value={conditionFilter} onValueChange={setConditionFilter}>
-                <SelectTrigger className="h-8 text-[11px]"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="h-8 text-[11px]"><SelectValue placeholder="All" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All</SelectItem>
-                  <SelectItem value="New">New</SelectItem>
-                  <SelectItem value="Used">Used</SelectItem>
-                  <SelectItem value="Refurbished">Refurbished</SelectItem>
+                  {uniqueConditions.map(cond => (
+                    <SelectItem key={cond} value={cond}>{cond}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -248,16 +248,14 @@ export default function POSPage() {
                   return;
                 }
                 addToCart(b);
-                toast.info(`${b.name} added to cart`, {
-                  position: 'top-right',
-                });
+                toast.info(`${b.name} added to cart`, { position: 'top-right' });
               }}>
                 <CardContent className="p-3">
                   <div className="flex justify-between items-start">
                     <div>
                       <p className="font-semibold text-sm">{b.name}</p>
                       <p className="text-[10px] text-muted-foreground">{b.brand} • {b.engineCC}cc • {b.color}</p>
-                      <Badge variant="outline" className="text-[9px] mt-1">{b.condition}</Badge>
+                      <p className="text-[10px] text-green-600 font-bold">{b.condition}</p>
                     </div>
                     <div className="text-right">
                       <p className="font-bold text-sm">৳{b.sellingPrice.toLocaleString()}</p>
@@ -277,7 +275,7 @@ export default function POSPage() {
           </div>
         </div>
 
-        {/* Cart & Checkout */}
+        {/* Cart & Checkout Section */}
         <div className="lg:col-span-2">
           <Card className="shadow-sm sticky top-20">
             <CardHeader className="pb-2">
@@ -290,7 +288,6 @@ export default function POSPage() {
                 <div className="text-center py-8 text-muted-foreground">
                   <ShoppingCart className="h-8 w-8 mx-auto mb-2 opacity-30" />
                   <p className="text-sm">Your cart is empty</p>
-                  <p className="text-xs mt-1">Click on a bike to add it</p>
                 </div>
               ) : (
                 <div className="space-y-2 max-h-48 overflow-auto scrollbar-thin">
@@ -301,33 +298,13 @@ export default function POSPage() {
                         <p className="text-xs text-muted-foreground">৳{item.bike.sellingPrice.toLocaleString()}</p>
                       </div>
                       <div className="flex items-center gap-1">
-                        <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => updateCartQuantity(item.bike.id, item.quantity - 1)}>
-                          <Minus className="h-3 w-3" />
-                        </Button>
+                        <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => updateCartQuantity(item.bike.id, item.quantity - 1)}><Minus className="h-3 w-3" /></Button>
                         <span className="w-6 text-center text-xs font-medium">{item.quantity}</span>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-7 w-7"
-                          onClick={() => {
-                            if (item.quantity >= item.bike.stock) {
-                              toast.error("Stock limit reached!");
-                            } else {
-                              updateCartQuantity(item.bike.id, item.quantity + 1);
-                            }
-                          }}
-                        >
-                          <Plus className="h-3 w-3" />
-                        </Button>
-                        <Button size="icon" variant="ghost" className="h-6 w-6 text-destructive" onClick={() => {
-                          removeFromCart(item.bike.id);
-                          toast.info('Removed from cart', {
-                            position: 'top-right',
-                            style: { color: 'red' }
-                          });
-                        }}>
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
+                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => {
+                          if (item.quantity >= item.bike.stock) toast.error("Stock limit!");
+                          else updateCartQuantity(item.bike.id, item.quantity + 1);
+                        }}><Plus className="h-3 w-3" /></Button>
+                        <Button size="icon" variant="ghost" className="h-6 w-6 text-destructive" onClick={() => removeFromCart(item.bike.id)}><Trash2 className="h-3 w-3" /></Button>
                       </div>
                     </div>
                   ))}
@@ -359,21 +336,14 @@ export default function POSPage() {
                       </Select>
                     </div>
                   </div>
-                  <div>
-                    <Label className="text-xs">Tax %</Label>
-                    <Input type="number" className="h-7 text-xs" value={tax} onChange={(e) => setTax(+e.target.value)} />
-                  </div>
+                  <div><Label className="text-xs">Tax %</Label><Input type="number" className="h-7 text-xs" value={tax} onChange={(e) => setTax(+e.target.value)} /></div>
                 </div>
 
                 <div>
                   <Label className="text-xs">Payment</Label>
                   <Select value={paymentType} onValueChange={(v) => setPaymentType(v as PaymentType)}>
                     <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="cash">Cash</SelectItem>
-                      <SelectItem value="card">Card</SelectItem>
-                      <SelectItem value="emi">EMI</SelectItem>
-                    </SelectContent>
+                    <SelectContent><SelectItem value="cash">Cash</SelectItem><SelectItem value="card">Card</SelectItem><SelectItem value="emi">EMI</SelectItem></SelectContent>
                   </Select>
                 </div>
 
@@ -388,15 +358,10 @@ export default function POSPage() {
               <div className="border-t pt-3 space-y-1 text-sm">
                 <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span>৳{subtotal.toLocaleString()}</span></div>
                 {discountAmount > 0 && <div className="flex justify-between text-success"><span>Discount</span><span>-৳{discountAmount.toLocaleString()}</span></div>}
-                {taxAmount > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Tax</span><span>৳{taxAmount.toLocaleString()}</span></div>}
-                <div className="flex justify-between font-bold text-base pt-1 border-t">
-                  <span>Total</span><span>৳{grandTotal.toLocaleString()}</span>
-                </div>
+                <div className="flex justify-between font-bold text-base pt-1 border-t"><span>Total</span><span>৳{grandTotal.toLocaleString()}</span></div>
               </div>
 
-              <Button className="w-full" onClick={handleCheckout} disabled={cart.length === 0}>
-                Complete Sale
-              </Button>
+              <Button className="w-full" onClick={handleCheckout} disabled={cart.length === 0}>Complete Sale</Button>
             </CardContent>
           </Card>
         </div>
@@ -405,23 +370,16 @@ export default function POSPage() {
       {/* Invoice Dialog */}
       <Dialog open={invoiceOpen} onOpenChange={setInvoiceOpen}>
         <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2"><Receipt className="h-4 w-4" /> Sale Complete!</DialogTitle>
-          </DialogHeader>
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><Receipt className="h-4 w-4" /> Sale Complete!</DialogTitle></DialogHeader>
           {lastSale && (
             <div className="space-y-4">
-              <div className="bg-muted/50 rounded-lg p-4 space-y-2 text-sm">
-                <div className="flex justify-between"><span className="text-muted-foreground">Date</span><span className="font-medium">{formatDateTime(lastSale.date)}</span></div>
+              <div className="bg-muted/50 rounded-lg p-4 space-y-2 text-sm border">
                 <div className="flex justify-between"><span className="text-muted-foreground">Customer</span><span className="font-medium">{lastSale.customerName}</span></div>
                 <div className="flex justify-between font-bold text-base border-t pt-2"><span>Total</span><span>৳{lastSale.grandTotal.toLocaleString()}</span></div>
               </div>
               <div className="flex gap-2">
-                <Button className="flex-1" variant="outline" onClick={() => downloadInvoice(lastSale)}>
-                  <Download className="h-4 w-4 mr-1" /> Download PDF
-                </Button>
-                <Button className="flex-1" onClick={() => printInvoice(lastSale)}>
-                  <Printer className="h-4 w-4 mr-1" /> Print
-                </Button>
+                <Button className="flex-1" variant="outline" onClick={() => downloadInvoice(lastSale)}><Download className="h-4 w-4 mr-1" /> PDF</Button>
+                <Button className="flex-1" onClick={() => printInvoice(lastSale)}><Printer className="h-4 w-4 mr-1" /> Print</Button>
               </div>
             </div>
           )}
@@ -431,24 +389,16 @@ export default function POSPage() {
       {/* Confirmation Dialog */}
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Confirm Sale</DialogTitle>
-          </DialogHeader>
-          <div className="py-4 text-sm text-muted-foreground">
-            Are you sure you want to finalize this sale? This action will update inventory and record the transaction.
-          </div>
+          <DialogHeader><DialogTitle>Confirm Sale</DialogTitle></DialogHeader>
+          <div className="py-2 text-sm text-muted-foreground">Are you sure you want to finalize this sale?</div>
           <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setConfirmOpen(false)} disabled={isSubmitting}>No, Cancel</Button>
+            <Button variant="outline" onClick={() => setConfirmOpen(false)} disabled={isSubmitting}>Cancel</Button>
             <Button onClick={finalizeSale} disabled={isSubmitting}>
-              {isSubmitting ? (
-                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Processing...</>
-              ) : (
-                "Yes, Proceed"
-              )}
+              {isSubmitting ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Processing...</> : "Confirm"}
             </Button>
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+    </div >
   );
 }
