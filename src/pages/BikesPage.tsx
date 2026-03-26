@@ -111,11 +111,6 @@ export default function BikesPage() {
           <Bike className="h-12 w-12 mx-auto mb-3 opacity-30" />
           <p className="font-medium">No bikes found</p>
           <p className="text-sm mt-1">{bikes.length === 0 ? 'Add your first bike to get started' : 'Try a different search term'}</p>
-          {bikes.length === 0 && canAdd && (
-            <Button size="sm" className="mt-3" onClick={() => setDialogOpen(true)}>
-              <Plus className="h-4 w-4 mr-1" /> Add First Bike
-            </Button>
-          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

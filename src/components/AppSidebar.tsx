@@ -24,11 +24,12 @@ const navItems = [
   { title: 'Dashboard', url: '/', icon: LayoutDashboard, key: 'dashboard' },
   { title: 'Sell Bike', url: '/sell-bikes', icon: ShoppingCart, key: 'pos' },
   { title: 'Bikes', url: '/bikes', icon: Bike, key: 'bikes' },
+  { title: 'Reports', url: '/reports', icon: BarChart3, key: 'reports' },
   { title: 'Customers', url: '/customers', icon: Users, key: 'customers' },
   { title: 'EMI Tracking', url: '/emi', icon: Receipt, key: 'emi' },
   { title: 'Inventory', url: '/inventory', icon: Package, key: 'inventory' },
   { title: 'Expenses', url: '/expenses', icon: Wallet, key: 'expenses' },
-  { title: 'Reports', url: '/reports', icon: BarChart3, key: 'reports' },
+
   { title: 'Users', url: '/users', icon: Users, key: 'users' },
 ];
 

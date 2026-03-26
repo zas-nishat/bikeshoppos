@@ -249,8 +249,16 @@ export default function ReportsPage() {
               <div className="space-y-3 max-h-[60vh] overflow-auto scrollbar-thin">
                 {recentSales.map((sale) => (
                   <div key={sale.id} className="rounded-md border border-border bg-muted/20 p-3">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
-                      <p className="text-sm font-semibold">{sale.customerName || 'Anonymous Buyer'}</p>
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-1">
+                      <div>
+                        {/* Customer Name */}
+                        <p className="text-sm font-semibold">{sale.customerName || 'Anonymous Buyer'}</p>
+                        {/* Customer Address (Added here) */}
+                        <p className="text-[11px] text-muted-foreground leading-none mt-0.5">
+                          {sale.customerPhone || 'Phone: N/A'}
+                        </p>
+                      </div>
+
                       <div className="flex items-center gap-2">
                         <span className="text-xs text-muted-foreground">{new Date(sale.date).toLocaleString()}</span>
                         {/* Per-sale action dropdown */}
@@ -271,12 +279,14 @@ export default function ReportsPage() {
                         </DropdownMenu>
                       </div>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs mt-2">
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs mt-3">
                       <div><span className="font-medium">Invoice ID:</span> {sale.id}</div>
                       <div><span className="font-medium">Total:</span> ৳{sale.grandTotal.toLocaleString()}</div>
                     </div>
+
                     <div className="mt-2 text-xs">
-                      <p className="font-medium text-muted-foreground">Bikes Sold</p>
+                      <p className="font-medium text-muted-foreground">Model:</p>
                       <div className="space-y-1">
                         {sale.items.map((item) => (
                           <div key={`${sale.id}-${item.bikeId}`} className="flex justify-between">
