@@ -92,7 +92,7 @@ export default function LoginPage() {
             <>
               <form onSubmit={handleLogin} className="space-y-4">
                 <div className="space-y-1.5">
-                  <Label htmlFor="identifier" className="text-xs">Email or Username</Label>
+                  <Label htmlFor="identifier" className="text-xs">Email</Label>
                   <Input
                     id="identifier"
                     type="text"

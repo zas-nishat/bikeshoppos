@@ -47,6 +47,11 @@ export default function ReportsPage() {
   const todaySales = sales.filter((s) => new Date(s.date).toDateString() === today);
   const monthlySales = sales.filter((s) => new Date(s.date).getMonth() === thisMonth);
 
+  // Recent sold items with buyer and bike details
+  const recentSales = [...sales]
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, 6);
+
   return (
     <div>
       <PageHeader title="Reports & Analytics" description="Business performance overview">
@@ -146,6 +151,55 @@ export default function ReportsPage() {
                     <Tooltip formatter={(v: number) => `৳${v.toLocaleString()}`} />
                   </PieChart>
                 </ResponsiveContainer>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="mt-6">
+        <Card className="shadow-sm">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">Recent Sales</CardTitle>
+            <p className="text-xs text-muted-foreground">Latest sold invoices with bike and buyer details</p>
+          </CardHeader>
+          <CardContent>
+            {recentSales.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <p className="text-sm">No recent sales yet</p>
+                <p className="text-xs mt-1">Complete a sale in POS to see it here</p>
+              </div>
+            ) : (
+              <div className="space-y-3 max-h-[60vh] overflow-auto scrollbar-thin">
+                {recentSales.map((sale) => (
+                  <div key={sale.id} className="rounded-md border border-border bg-muted/20 p-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
+                      <p className="text-sm font-semibold">{sale.customerName || 'Anonymous Buyer'}</p>
+                      <span className="text-xs text-muted-foreground">{new Date(sale.date).toLocaleString()}</span>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs mt-2">
+                      <div><span className="font-medium">Invoice ID:</span> {sale.id}</div>
+                      <div><span className="font-medium">Total:</span> ৳{sale.grandTotal.toLocaleString()}</div>
+                      <div><span className="font-medium">Payment:</span> {sale.paymentType}</div>
+                      <div><span className="font-medium">Discount:</span> ৳{sale.discount.toLocaleString()}</div>
+                    </div>
+                    <div className="mt-2 text-xs">
+                      <p className="font-medium">Buyer Details</p>
+                      <p>{sale.customerPhone || 'Phone: N/A'} | {sale.customerAddress || 'Address: N/A'} | {sale.customerEmail || 'Email: N/A'}</p>
+                    </div>
+                    <div className="mt-2 text-xs">
+                      <p className="font-medium">Bikes Sold</p>
+                      <div className="space-y-1">
+                        {sale.items.map((item) => (
+                          <div key={`${sale.id}-${item.bikeId}`} className="flex justify-between text-ssm">
+                            <span>{item.bikeName} ({item.brand} {item.model}, {item.color}, {item.engineCC}cc)</span>
+                            <span>{item.quantity} × ৳{item.unitPrice.toLocaleString()}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </CardContent>
