@@ -33,23 +33,29 @@ export default function POSPage() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // নতুন ফিল্টার স্টেট
+  // ফিল্টার স্টেটসমূহ
   const [absFilter, setAbsFilter] = useState<string>('all');
   const [brakeFilter, setBrakeFilter] = useState<string>('all');
+  const [ccFilter, setCcFilter] = useState<string>('all');
+  const [colorFilter, setColorFilter] = useState<string>('all');
+  const [conditionFilter, setConditionFilter] = useState<string>('all');
 
-  // ফিল্টার লজিক (আপনার SQL Schema অনুযায়ী আপডেট করা)
+  // ফিল্টার লজিক
   const filteredBikes = bikes.filter((b) => {
     const matchesSearch = `${b.name} ${b.brand} ${b.model}`.toLowerCase().includes(search.toLowerCase());
-
-    // ABS ফিল্টার লজিক
-    const matchesAbs = absFilter === 'all' ||
-      (absFilter === 'yes' ? b.abs === true : b.abs === false);
-
-    // Brake Type ফিল্টার লজিক
+    const matchesAbs = absFilter === 'all' || (absFilter === 'yes' ? b.abs === true : b.abs === false);
     const matchesBrake = brakeFilter === 'all' || b.brakeType === brakeFilter;
 
-    return b.stock > 0 && matchesSearch && matchesAbs && matchesBrake;
+    // নতুন ফিল্টার কন্ডিশন
+    const matchesCC = ccFilter === 'all' || b.engineCC?.toString() === ccFilter;
+    const matchesColor = colorFilter === 'all' || b.color?.toLowerCase() === colorFilter.toLowerCase();
+    const matchesCondition = conditionFilter === 'all' || b.condition === conditionFilter;
+
+    return b.stock > 0 && matchesSearch && matchesAbs && matchesBrake && matchesCC && matchesColor && matchesCondition;
   });
+
+  // ইউনিক কালার লিস্ট বের করা (ফিল্টারের জন্য)
+  const uniqueColors = Array.from(new Set(bikes.map(b => b.color).filter(Boolean)));
 
   const subtotal = cart.reduce((sum, c) => sum + c.bike.sellingPrice * c.quantity, 0);
   const discountAmount = discountType === 'percentage' ? subtotal * (discount / 100) : discount;
@@ -162,33 +168,70 @@ export default function POSPage() {
             <Input placeholder="Search bikes by name or model..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
           </div>
 
-          {/* নতুন ফিল্টার UI সেকশন */}
-          <div className="grid grid-cols-2 gap-3">
+          {/* ফিল্টার UI সেকশন */}
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
             <div className="space-y-1">
-              <Label className="text-[10px] uppercase font-bold text-muted-foreground">ABS System</Label>
+              <Label className="text-[10px] uppercase font-bold text-muted-foreground">ABS</Label>
               <Select value={absFilter} onValueChange={setAbsFilter}>
-                <SelectTrigger className="h-9 text-xs">
-                  <SelectValue placeholder="ABS" />
-                </SelectTrigger>
+                <SelectTrigger className="h-8 text-[11px]"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All ABS</SelectItem>
-                  <SelectItem value="yes">With ABS</SelectItem>
-                  <SelectItem value="no">No ABS</SelectItem>
+                  <SelectItem value="all">All</SelectItem>
+                  <SelectItem value="yes">Yes</SelectItem>
+                  <SelectItem value="no">No</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-1">
-              <Label className="text-[10px] uppercase font-bold text-muted-foreground">Brake Type</Label>
+              <Label className="text-[10px] uppercase font-bold text-muted-foreground">Brake</Label>
               <Select value={brakeFilter} onValueChange={setBrakeFilter}>
-                <SelectTrigger className="h-9 text-xs">
-                  <SelectValue placeholder="Brake" />
-                </SelectTrigger>
+                <SelectTrigger className="h-8 text-[11px]"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Brakes</SelectItem>
-                  <SelectItem value="Single Disc">Single Disc</SelectItem>
-                  <SelectItem value="Dual Disc">Dual Disc</SelectItem>
+                  <SelectItem value="all">All</SelectItem>
+                  <SelectItem value="Single Disc">Single</SelectItem>
+                  <SelectItem value="Dual Disc">Dual</SelectItem>
                   <SelectItem value="Drum">Drum</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1">
+              <Label className="text-[10px] uppercase font-bold text-muted-foreground">Engine CC</Label>
+              <Select value={ccFilter} onValueChange={setCcFilter}>
+                <SelectTrigger className="h-8 text-[11px]"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All</SelectItem>
+                  <SelectItem value="100">100cc</SelectItem>
+                  <SelectItem value="125">125cc</SelectItem>
+                  <SelectItem value="150">150cc</SelectItem>
+                  <SelectItem value="160">160cc</SelectItem>
+                  <SelectItem value="165">165cc</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1">
+              <Label className="text-[10px] uppercase font-bold text-muted-foreground">Color</Label>
+              <Select value={colorFilter} onValueChange={setColorFilter}>
+                <SelectTrigger className="h-8 text-[11px]"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All</SelectItem>
+                  {uniqueColors.map(c => (
+                    <SelectItem key={c} value={c?.toLowerCase() || ''}>{c}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1">
+              <Label className="text-[10px] uppercase font-bold text-muted-foreground">Cond.</Label>
+              <Select value={conditionFilter} onValueChange={setConditionFilter}>
+                <SelectTrigger className="h-8 text-[11px]"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All</SelectItem>
+                  <SelectItem value="New">New</SelectItem>
+                  <SelectItem value="Used">Used</SelectItem>
+                  <SelectItem value="Refurbished">Refurbished</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -213,7 +256,8 @@ export default function POSPage() {
                   <div className="flex justify-between items-start">
                     <div>
                       <p className="font-semibold text-sm">{b.name}</p>
-                      <p className="text-xs text-muted-foreground">{b.brand} • {b.engineCC}cc</p>
+                      <p className="text-[10px] text-muted-foreground">{b.brand} • {b.engineCC}cc • {b.color}</p>
+                      <Badge variant="outline" className="text-[9px] mt-1">{b.condition}</Badge>
                     </div>
                     <div className="text-right">
                       <p className="font-bold text-sm">৳{b.sellingPrice.toLocaleString()}</p>
