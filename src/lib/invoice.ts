@@ -3,6 +3,7 @@ import autoTable, { RowInput } from 'jspdf-autotable';
 import QRCode from 'qrcode';
 import type { Sale } from '@/types';
 import { formatDateTime } from '@/lib/utils';
+import { SITE_CONFIG } from '@/config/site';
 
 export async function generateInvoicePDF(sale: Sale) {
   const doc = new jsPDF({
@@ -27,12 +28,12 @@ export async function generateInvoicePDF(sale: Sale) {
   doc.setTextColor(255, 255, 255);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(22);
-  doc.text('BIKEHUB POS', margin, 20);
+  doc.text(SITE_CONFIG.name.toUpperCase(), margin, 20);
 
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
-  doc.text('Premium Motorcycle Sales & Service Center', margin, 27);
-  doc.text('123 Bike Avenue, Dhaka | +880 1XXX-XXXXXX', margin, 33);
+  doc.text(SITE_CONFIG.description, margin, 27);
+  doc.text(`${SITE_CONFIG.address} | ${SITE_CONFIG.phone}`, margin, 33);
 
   // --- 2. QR Code ---
   try {
@@ -98,8 +99,8 @@ export async function generateInvoicePDF(sale: Sale) {
       styles: { fontStyle: 'bold' as const } // Fixed TS Error
     },
     item.quantity.toString(),
-    `TK ${item.unitPrice.toLocaleString()}`,
-    `TK ${(item.unitPrice * item.quantity).toLocaleString()}`
+    `${SITE_CONFIG.currencySymbol} ${item.unitPrice.toLocaleString()}`,
+    `${SITE_CONFIG.currencySymbol} ${(item.unitPrice * item.quantity).toLocaleString()}`
   ]);
 
   const tableStartY = Math.max(110, tempY + 5);
@@ -130,20 +131,20 @@ export async function generateInvoicePDF(sale: Sale) {
   doc.setFont('helvetica', 'normal');
 
   doc.text('Subtotal:', summaryX, finalY);
-  doc.text(`TK ${sale.totalPrice.toLocaleString()}`, pageWidth - margin, finalY, { align: 'right' });
+  doc.text(`${SITE_CONFIG.currencySymbol} ${sale.totalPrice.toLocaleString()}`, pageWidth - margin, finalY, { align: 'right' });
 
   let currentY = finalY + 6;
   if (sale.discount > 0) {
     doc.setTextColor(220, 38, 38);
     doc.text('Discount:', summaryX, currentY);
-    doc.text(`-TK ${sale.discount.toLocaleString()}`, pageWidth - margin, currentY, { align: 'right' });
+    doc.text(`-${SITE_CONFIG.currencySymbol} ${sale.discount.toLocaleString()}`, pageWidth - margin, currentY, { align: 'right' });
     currentY += 6;
     doc.setTextColor(textColor[0], textColor[1], textColor[2]);
   }
 
   if (sale.tax > 0) {
     doc.text('Tax:', summaryX, currentY);
-    doc.text(`TK ${sale.tax.toLocaleString()}`, pageWidth - margin, currentY, { align: 'right' });
+    doc.text(`${SITE_CONFIG.currencySymbol} ${sale.tax.toLocaleString()}`, pageWidth - margin, currentY, { align: 'right' });
     currentY += 6;
   }
 
@@ -154,7 +155,7 @@ export async function generateInvoicePDF(sale: Sale) {
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(accentColor[0], accentColor[1], accentColor[2]);
   doc.text('Grand Total:', summaryX, currentY);
-  doc.text(`TK ${sale.grandTotal.toLocaleString()}`, pageWidth - margin, currentY, { align: 'right' });
+  doc.text(`${SITE_CONFIG.currencySymbol} ${sale.grandTotal.toLocaleString()}`, pageWidth - margin, currentY, { align: 'right' });
 
   // --- 6. Footer & Signatures ---
   const sigY = pageHeight - 40;
@@ -173,7 +174,7 @@ export async function generateInvoicePDF(sale: Sale) {
   doc.rect(0, pageHeight - 15, pageWidth, 15, 'F');
   doc.setFontSize(8);
   doc.setTextColor(107, 114, 128);
-  doc.text('Thank you for choosing BikeHub! Ride safe and wear a helmet.', pageWidth / 2, pageHeight - 7, { align: 'center' });
+  doc.text(`Thank you for choosing ${SITE_CONFIG.shortName}! Ride safe and wear a helmet.`, pageWidth / 2, pageHeight - 7, { align: 'center' });
 
   return doc;
 }
