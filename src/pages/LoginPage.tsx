@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
+import { SITE_CONFIG } from '@/config/site';
 
 export default function LoginPage() {
   const [identifier, setIdentifier] = useState('');
@@ -46,8 +47,8 @@ export default function LoginPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
             </svg>
           </div>
-          <CardTitle className="text-lg">BikeHub POS</CardTitle>
-          <p className="text-xs text-muted-foreground">{showForgotPassword ? 'Reset your password' : 'Sign in to your showroom'}</p>
+          <CardTitle className="text-lg">{SITE_CONFIG.name}</CardTitle>
+          <p className="text-xs text-muted-foreground">{showForgotPassword ? 'Reset your password' : SITE_CONFIG.description}</p>
         </CardHeader>
         <CardContent>
           {/* {!isInitialized && (
@@ -131,6 +132,11 @@ export default function LoginPage() {
           )}
         </CardContent>
       </Card>
+      <div className="mt-8 text-center text-[10px] text-muted-foreground animate-fade-in delay-500">
+        <p className="font-medium">{SITE_CONFIG.shopName}</p>
+        <p>{SITE_CONFIG.address} • {SITE_CONFIG.phone}</p>
+        <p>{SITE_CONFIG.email}</p>
+      </div>
     </div>
   );
 }

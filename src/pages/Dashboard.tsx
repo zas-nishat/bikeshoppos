@@ -1,4 +1,5 @@
 import { useStore } from '@/store/useStore';
+import { SITE_CONFIG } from '@/config/site';
 import { StatCard } from '@/components/StatCard';
 import { PageHeader } from '@/components/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -33,16 +34,16 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <div className="animate-fade-in" style={{ animationDelay: '0ms' }}>
-          <StatCard title="Today's Sales" value={`৳${todayRevenue.toLocaleString()}`} icon={DollarSign} variant="primary" trend={`${todaySales.length} transactions`} />
+          <StatCard title="Today's Sales" value={`${SITE_CONFIG.currencySymbol}${todayRevenue.toLocaleString()}`} icon={DollarSign} variant="primary" trend={`${todaySales.length} transactions`} />
         </div>
         <div className="animate-fade-in" style={{ animationDelay: '80ms' }}>
-          <StatCard title="Total Revenue" value={`৳${totalRevenue.toLocaleString()}`} icon={TrendingUp} variant="success" />
+          <StatCard title="Total Revenue" value={`${SITE_CONFIG.currencySymbol}${totalRevenue.toLocaleString()}`} icon={TrendingUp} variant="success" />
         </div>
         <div className="animate-fade-in" style={{ animationDelay: '160ms' }}>
           <StatCard title="Bikes in Stock" value={totalStock} icon={Bike} variant="accent" />
         </div>
         <div className="animate-fade-in" style={{ animationDelay: '240ms' }}>
-          <StatCard title="Total Expenses" value={`৳${totalExpenses.toLocaleString()}`} icon={ShoppingCart} variant="warning" />
+          <StatCard title="Total Expenses" value={`${SITE_CONFIG.currencySymbol}${totalExpenses.toLocaleString()}`} icon={ShoppingCart} variant="warning" />
         </div>
       </div>
 
@@ -58,7 +59,7 @@ export default function Dashboard() {
                   <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
                   <XAxis dataKey="day" tick={{ fontSize: 11 }} className="fill-muted-foreground" />
                   <YAxis tick={{ fontSize: 11 }} className="fill-muted-foreground" />
-                  <Tooltip formatter={(v: number) => [`৳${v.toLocaleString()}`, 'Revenue']} contentStyle={{ borderRadius: 8, border: '1px solid hsl(var(--border))' }} />
+                  <Tooltip formatter={(v: number) => [`${SITE_CONFIG.currencySymbol}${v.toLocaleString()}`, 'Revenue']} contentStyle={{ borderRadius: 8, border: '1px solid hsl(var(--border))' }} />
                   <Bar dataKey="revenue" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
@@ -104,7 +105,7 @@ export default function Dashboard() {
                         <p className="font-medium truncate">{s.customerName}</p>
                         <p className="text-xs text-muted-foreground">{formatDateTime(s.date)}</p>
                       </div>
-                      <span className="font-semibold text-foreground">৳{s.grandTotal.toLocaleString()}</span>
+                      <span className="font-semibold text-foreground">{SITE_CONFIG.currencySymbol}{s.grandTotal.toLocaleString()}</span>
                     </div>
                   ))}
                 </div>

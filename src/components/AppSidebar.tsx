@@ -4,6 +4,7 @@ import { LayoutDashboard, Bike, Users, ShoppingCart, Receipt, Package, Wallet, B
 import { NavLink } from '@/components/NavLink';
 import { useStore } from '@/store/useStore';
 import { ROLE_PERMISSIONS } from '@/types';
+import { SITE_CONFIG } from '@/config/site';
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
   SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarFooter, useSidebar,
@@ -51,8 +52,8 @@ export function AppSidebar() {
         </div>
         {!collapsed && (
           <div className="animate-fade-in">
-            <p className="text-sm font-bold text-sidebar-accent-foreground tracking-tight">BikeHub POS</p>
-            <p className="text-[10px] text-sidebar-foreground uppercase tracking-widest">Showroom</p>
+            <p className="text-sm font-bold text-sidebar-accent-foreground tracking-tight">{SITE_CONFIG.name}</p>
+            <p className="text-[10px] text-sidebar-foreground uppercase tracking-widest">{SITE_CONFIG.shopName}</p>
           </div>
         )}
       </div>

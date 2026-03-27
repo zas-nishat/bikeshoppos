@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useStore } from '@/store/useStore';
+import { SITE_CONFIG } from '@/config/site';
 import { PageHeader } from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -256,7 +257,7 @@ export default function POSPage() {
                       <p className="text-[10px] text-green-600 font-bold">{b.condition}</p>
                     </div>
                     <div className="text-right">
-                      <p className="font-bold text-sm">৳{b.sellingPrice.toLocaleString()}</p>
+                      <p className="font-bold text-sm">{SITE_CONFIG.currencySymbol}{b.sellingPrice.toLocaleString()}</p>
                       <Badge variant="secondary" className="text-[10px]">{b.stock} left</Badge>
                     </div>
                   </div>
@@ -293,7 +294,7 @@ export default function POSPage() {
                     <div key={item.bike.id} className="flex items-center justify-between text-sm p-2 rounded-md bg-muted/50">
                       <div className="flex-1 min-w-0 mr-2">
                         <p className="font-medium truncate">{item.bike.name}</p>
-                        <p className="text-xs text-muted-foreground">৳{item.bike.sellingPrice.toLocaleString()}</p>
+                        <p className="text-xs text-muted-foreground">{SITE_CONFIG.currencySymbol}{item.bike.sellingPrice.toLocaleString()}</p>
                       </div>
                       <div className="flex items-center gap-1">
                         <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => updateCartQuantity(item.bike.id, item.quantity - 1)}><Minus className="h-3 w-3" /></Button>
@@ -330,7 +331,7 @@ export default function POSPage() {
                       <Input type="number" className="h-7 text-xs" value={discount} onChange={(e) => setDiscount(+e.target.value)} />
                       <Select value={discountType} onValueChange={(v) => setDiscountType(v as 'fixed' | 'percentage')}>
                         <SelectTrigger className="h-7 w-16 text-[10px]"><SelectValue /></SelectTrigger>
-                        <SelectContent><SelectItem value="fixed">৳</SelectItem><SelectItem value="percentage">%</SelectItem></SelectContent>
+                        <SelectContent><SelectItem value="fixed">{SITE_CONFIG.currencySymbol}</SelectItem><SelectItem value="percentage">%</SelectItem></SelectContent>
                       </Select>
                     </div>
                   </div>
@@ -354,9 +355,9 @@ export default function POSPage() {
               </div>
 
               <div className="border-t pt-3 space-y-1 text-sm">
-                <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span>৳{subtotal.toLocaleString()}</span></div>
-                {discountAmount > 0 && <div className="flex justify-between text-success"><span>Discount</span><span>-৳{discountAmount.toLocaleString()}</span></div>}
-                <div className="flex justify-between font-bold text-base pt-1 border-t"><span>Total</span><span>৳{grandTotal.toLocaleString()}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span>{SITE_CONFIG.currencySymbol}{subtotal.toLocaleString()}</span></div>
+                {discountAmount > 0 && <div className="flex justify-between text-success"><span>Discount</span><span>-{SITE_CONFIG.currencySymbol}{discountAmount.toLocaleString()}</span></div>}
+                <div className="flex justify-between font-bold text-base pt-1 border-t"><span>Total</span><span>{SITE_CONFIG.currencySymbol}{grandTotal.toLocaleString()}</span></div>
               </div>
 
               <Button className="w-full" onClick={handleCheckout} disabled={cart.length === 0}>Complete Sale</Button>
@@ -373,7 +374,7 @@ export default function POSPage() {
             <div className="space-y-4">
               <div className="bg-muted/50 rounded-lg p-4 space-y-2 text-sm border">
                 <div className="flex justify-between"><span className="text-muted-foreground">Customer</span><span className="font-medium">{lastSale.customerName}</span></div>
-                <div className="flex justify-between font-bold text-base border-t pt-2"><span>Total</span><span>৳{lastSale.grandTotal.toLocaleString()}</span></div>
+                <div className="flex justify-between font-bold text-base border-t pt-2"><span>Total</span><span>{SITE_CONFIG.currencySymbol}{lastSale.grandTotal.toLocaleString()}</span></div>
               </div>
               <div className="flex gap-2">
                 <Button className="flex-1" variant="outline" onClick={() => downloadInvoice(lastSale)}><Download className="h-4 w-4 mr-1" /> PDF</Button>

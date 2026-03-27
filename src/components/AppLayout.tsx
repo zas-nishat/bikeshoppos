@@ -2,6 +2,7 @@ import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
 import { useStore } from '@/store/useStore';
 import { Badge } from '@/components/ui/badge';
+import { SITE_CONFIG } from '@/config/site';
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { currentUser } = useStore();
@@ -14,7 +15,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           <header className="h-14 flex items-center justify-between border-b bg-card px-4 sticky top-0 z-30">
             <div className="flex items-center gap-2">
               <SidebarTrigger />
-              <span className="text-sm font-medium text-muted-foreground hidden sm:block">Bike Showroom POS</span>
+              <span className="text-sm font-medium text-muted-foreground hidden sm:block">{SITE_CONFIG.name}</span>
             </div>
             {currentUser && (
               <div className="flex items-center gap-2">
