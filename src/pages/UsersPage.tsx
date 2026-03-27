@@ -44,6 +44,7 @@ export default function UsersPage() {
     const [newRole, setNewRole] = useState<UserRole>('salesman');
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+    const [createConfirmOpen, setCreateConfirmOpen] = useState(false);
     const [userToDelete, setUserToDelete] = useState<{ id: string; name: string; role: UserRole } | null>(null);
     const [editDialogOpen, setEditDialogOpen] = useState(false);
     const [editName, setEditName] = useState('');
@@ -68,7 +69,7 @@ export default function UsersPage() {
         );
     }
 
-    const handleCreateUser = async (e: React.FormEvent) => {
+    const handleCreateUser = (e: React.FormEvent) => {
         e.preventDefault();
 
         if (!newName.trim()) {
@@ -91,6 +92,10 @@ export default function UsersPage() {
             return;
         }
 
+        setCreateConfirmOpen(true);
+    };
+
+    const confirmCreateUser = async () => {
         const result = await register(newName, newEmail, newPassword, newPhone, newRole);
 
         if (result.success) {
@@ -100,9 +105,11 @@ export default function UsersPage() {
             setNewPassword('');
             setNewPhone('');
             setNewRole('salesman');
+            setCreateConfirmOpen(false);
             setIsDialogOpen(false);
         } else {
             toast.error(result.error || 'Failed to create user');
+            setCreateConfirmOpen(false);
         }
     };
 
@@ -396,6 +403,26 @@ export default function UsersPage() {
                             onClick={handleDeleteUser}
                         >
                             Delete User
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={createConfirmOpen} onOpenChange={setCreateConfirmOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Confirm User Creation</DialogTitle>
+                        <DialogDescription>
+                            Are you sure you want to create a new {newRole} account for <strong>{newName}</strong> ({newEmail})?
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="secondary" size="sm" onClick={() => setCreateConfirmOpen(false)}>Cancel</Button>
+                        <Button
+                            size="sm"
+                            onClick={confirmCreateUser}
+                        >
+                            Create User
                         </Button>
                     </DialogFooter>
                 </DialogContent>
