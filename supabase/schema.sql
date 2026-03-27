@@ -109,6 +109,10 @@ CREATE TABLE accounts (
   "createdAt" TEXT NOT NULL
 );
 
+-- Insert Default Admin Account (Optional: Use plaintext password since app handles fallback)
+INSERT INTO accounts (id, name, email, password, phone, role, "createdAt")
+VALUES ('550e8400-e29b-41d4-a716-446655440000', 'Admin', 'admin@bikehub.com', 'admin123', '01700000001', 'admin', NOW());
+
 -- Create Stock Logs Table
 CREATE TABLE stock_logs (
   id TEXT PRIMARY KEY,
