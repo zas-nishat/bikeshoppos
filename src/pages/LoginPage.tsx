@@ -37,12 +37,6 @@ export default function LoginPage() {
     }
   };
 
-  const demoAccounts = [
-    { label: 'Admin', email: 'admin@bikehub.com', password: 'admin123' },
-    { label: 'Manager', email: 'manager@bikehub.com', password: 'manager123' },
-    { label: 'Salesman', email: 'sales@bikehub.com', password: 'sales123' },
-  ];
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-sm shadow-lg animate-fade-in-scale">

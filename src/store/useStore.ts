@@ -10,8 +10,6 @@ const generateId = () => crypto.randomUUID();
 
 const seedAccounts: UserAccount[] = [
   { id: '550e8400-e29b-41d4-a716-446655440000', name: 'Admin', email: 'admin@bikehub.com', password: 'admin123', phone: '01700000001', role: 'admin', createdAt: new Date().toISOString() },
-  { id: '550e8400-e29b-41d4-a716-446655440001', name: 'Manager', email: 'manager@bikehub.com', password: 'manager123', phone: '01700000002', role: 'manager', createdAt: new Date().toISOString() },
-  { id: '550e8400-e29b-41d4-a716-446655440002', name: 'Sales', email: 'sales@bikehub.com', password: 'sales123', phone: '01700000003', role: 'salesman', createdAt: new Date().toISOString() },
 ];
 
 interface AppState {
