@@ -8,9 +8,6 @@ const ENCRYPTION_KEY = 'bike-pos-secret-99'; // Same key for consistency
 
 const generateId = () => crypto.randomUUID();
 
-const seedAccounts: UserAccount[] = [
-  { id: '550e8400-e29b-41d4-a716-446655440000', name: 'Admin', email: 'admin@bikehub.com', password: 'admin123', phone: '01700000001', role: 'admin', createdAt: new Date().toISOString() },
-];
 
 interface AppState {
   // Auth
@@ -61,7 +58,7 @@ export const useStore = create<AppState>()(
   persist(
     (set, get) => ({
       currentUser: null,
-      accounts: seedAccounts,
+      accounts: [],
       isInitialized: false,
       register: async (name, email, password, phone, role) => {
         const state = get();

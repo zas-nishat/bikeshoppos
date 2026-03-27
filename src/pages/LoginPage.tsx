@@ -118,7 +118,7 @@ export default function LoginPage() {
                   </div>
                 </div>
                 <Button type="submit" className="w-full" disabled={!identifier || !password || !isInitialized}>
-                  {!isInitialized ? 'Syncing...' : 'Sign In'}
+                  {'Sign In'}
                 </Button>
               </form>
 
