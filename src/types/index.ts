@@ -8,6 +8,7 @@ export interface Bike {
   purchasePrice: number;
   sellingPrice: number;
   stock: number;
+  image?: string;
   brakeType?: 'Single Disc' | 'Dual Disc' | 'Drum';
   abs?: boolean;
   condition?: 'New' | 'Used' | 'Refurbished';

@@ -109,8 +109,14 @@ export const useStore = create<AppState>()(
         // Encrypt password before saving
         const encryptedPassword = CryptoJS.AES.encrypt(password, ENCRYPTION_KEY).toString();
         const account: UserAccount = { id: generateId(), name, email, password: encryptedPassword, phone, role, createdAt: new Date().toISOString() };
-        set({ accounts: [...state.accounts, account] });
-        await supabase.from('accounts').insert([account]);
+        
+        const { error } = await supabase.from('accounts').insert([account]);
+        if (error) {
+          console.error('Registration failed in Supabase:', error);
+          return { success: false, error: error.message };
+        }
+
+        set({ accounts: [...get().accounts, account] });
         return { success: true };
       },
       loginWithCredentials: (identifier, password) => {
@@ -135,31 +141,36 @@ export const useStore = create<AppState>()(
         return { success: true };
       },
       deleteUser: async (userId) => {
-        const state = get();
-        const currentUser = state.currentUser;
-        const userToDelete = state.accounts.find((a) => a.id === userId);
+        const userToDelete = get().accounts.find((a) => a.id === userId);
         if (!userToDelete) {
           return { success: false, error: 'User not found' };
         }
-        if (userToDelete.role === 'admin' && currentUser?.id !== userId) {
+        
+        const currentUser = get().currentUser;
+        if (userToDelete.role === 'admin' && (!currentUser || currentUser.id !== userId)) {
           return { success: false, error: 'Admin accounts can only be deleted by themselves' };
         }
-        set({ accounts: state.accounts.filter((a) => a.id !== userId) });
-        await supabase.from('accounts').delete().eq('id', userId);
+
+        const { error } = await supabase.from('accounts').delete().eq('id', userId);
+        if (error) {
+          console.error('Delete failed in Supabase:', error);
+          return { success: false, error: error.message };
+        }
+
+        set({ accounts: get().accounts.filter((a) => a.id !== userId) });
         return { success: true };
       },
       updateUser: async (userId, updates) => {
-        const state = get();
-        const userToUpdate = state.accounts.find((a) => a.id === userId);
+        const userToUpdate = get().accounts.find((a) => a.id === userId);
         if (!userToUpdate) {
           return { success: false, error: 'User not found' };
         }
         
         // Prevent setting a phone/email that belongs to a different user
-        if (updates.email && state.accounts.some((a) => a.id !== userId && a.email.toLowerCase() === updates.email?.toLowerCase())) {
+        if (updates.email && get().accounts.some((a) => a.id !== userId && a.email.toLowerCase() === updates.email?.toLowerCase())) {
           return { success: false, error: 'Email already exists' };
         }
-        if (updates.phone && state.accounts.some((a) => a.id !== userId && a.phone === updates.phone)) {
+        if (updates.phone && get().accounts.some((a) => a.id !== userId && a.phone === updates.phone)) {
           return { success: false, error: 'Phone number already exists' };
         }
 
@@ -176,8 +187,14 @@ export const useStore = create<AppState>()(
           phone: updates.phone ?? userToUpdate.phone,
           password: encryptedPassword,
         };
-        set({ accounts: state.accounts.map((a) => (a.id === userId ? updated : a)) });
-        await supabase.from('accounts').update(updated).eq('id', userId);
+
+        const { error } = await supabase.from('accounts').update(updated).eq('id', userId);
+        if (error) {
+          console.error('Update failed in Supabase:', error);
+          return { success: false, error: error.message };
+        }
+
+        set({ accounts: get().accounts.map((a) => (a.id === userId ? updated : a)) });
         return { success: true };
       },
       logout: () => set({ currentUser: null }),
@@ -192,18 +209,30 @@ export const useStore = create<AppState>()(
       addBike: async (bikeData) => {
         const id = generateId();
         const newBike = { ...bikeData, id };
-        set((state) => ({ bikes: [...state.bikes, newBike] }));
-        await supabase.from('bikes').insert([newBike]);
+        const { error } = await supabase.from('bikes').insert([newBike]);
+        if (!error) {
+          set((state) => ({ bikes: [...state.bikes, newBike] }));
+        } else {
+          console.error("Failed to add bike:", error);
+        }
       },
       updateBike: async (id, updates) => {
-        set((state) => ({
-          bikes: state.bikes.map((b) => (b.id === id ? { ...b, ...updates } : b)),
-        }));
-        await supabase.from('bikes').update(updates).eq('id', id);
+        const { error } = await supabase.from('bikes').update(updates).eq('id', id);
+        if (!error) {
+          set((state) => ({
+            bikes: state.bikes.map((b) => (b.id === id ? { ...b, ...updates } : b)),
+          }));
+        } else {
+          console.error("Failed to update bike:", error);
+        }
       },
       deleteBike: async (id) => {
-        set((state) => ({ bikes: state.bikes.filter((b) => b.id !== id) }));
-        await supabase.from('bikes').delete().eq('id', id);
+        const { error } = await supabase.from('bikes').delete().eq('id', id);
+        if (!error) {
+          set((state) => ({ bikes: state.bikes.filter((b) => b.id !== id) }));
+        } else {
+          console.error("Failed to delete bike:", error);
+        }
       },
 
       // Customers
@@ -211,14 +240,22 @@ export const useStore = create<AppState>()(
       addCustomer: async (c) => {
         const id = generateId();
         const newCustomer = { ...c, id };
-        set((state) => ({ customers: [...state.customers, newCustomer] }));
-        await supabase.from('customers').insert([newCustomer]);
+        const { error } = await supabase.from('customers').insert([newCustomer]);
+        if (!error) {
+          set((state) => ({ customers: [...state.customers, newCustomer] }));
+        } else {
+          console.error("Failed to add customer:", error);
+        }
       },
       updateCustomer: async (id, c) => {
-        set((state) => ({
-          customers: state.customers.map((cust) => (cust.id === id ? { ...cust, ...c } : cust)),
-        }));
-        await supabase.from('customers').update(c).eq('id', id);
+        const { error } = await supabase.from('customers').update(c).eq('id', id);
+        if (!error) {
+          set((state) => ({
+            customers: state.customers.map((cust) => (cust.id === id ? { ...cust, ...c } : cust)),
+          }));
+        } else {
+          console.error("Failed to update customer:", error);
+        }
       },
 
       // Sales
@@ -334,7 +371,15 @@ export const useStore = create<AppState>()(
 
       initializeSupabase: async () => {
         try {
-          const [{ data: b }, { data: c }, { data: s }, { data: e }, { data: em }, { data: sl }, { data: ac }] = await Promise.all([
+          const [
+            { data: b }, 
+            { data: c }, 
+            { data: s }, 
+            { data: e }, 
+            { data: em }, 
+            { data: sl }, 
+            { data: ac }
+          ] = await Promise.all([
             supabase.from('bikes').select('*'),
             supabase.from('customers').select('*'),
             supabase.from('sales').select('*'),
@@ -343,10 +388,12 @@ export const useStore = create<AppState>()(
             supabase.from('stock_logs').select('*'),
             supabase.from('accounts').select('*')
           ]);
-          if (b?.length) set({ bikes: b as Bike[] });
-          if (c?.length) set({ customers: c as Customer[] });
 
-          if (s?.length) {
+          // Update state if data exists (even if empty array, which overwrites seeds)
+          if (b) set({ bikes: b as Bike[] });
+          if (c) set({ customers: c as Customer[] });
+
+          if (s) {
             // Retrieve relational sale_items dynamically
             const { data: si } = await supabase.from('sale_items').select('*');
             const populatedSales = s.map((sale: any) => ({
@@ -355,10 +402,11 @@ export const useStore = create<AppState>()(
             set({ sales: populatedSales as Sale[] });
           }
 
-          if (e?.length) set({ expenses: e as Expense[] });
-          if (em?.length) set({ emis: em as EMI[] });
-          if (sl?.length) set({ stockLogs: sl as StockLog[] });
-          if (ac?.length) set({ accounts: ac as UserAccount[] });
+          if (e) set({ expenses: e as Expense[] });
+          if (em) set({ emis: em as EMI[] });
+          if (sl) set({ stockLogs: sl as StockLog[] });
+          if (ac) set({ accounts: ac as UserAccount[] });
+          
           set({ isInitialized: true });
         } catch (err) {
           console.error("Supabase Initialization Failed", err);

@@ -42,7 +42,6 @@ export default function POSPage() {
   const [colorFilter, setColorFilter] = useState<string>('all');
   const [conditionFilter, setConditionFilter] = useState<string>('all');
 
-  // --- ডাইনামিক লিস্ট জেনারেশন (আপনার ডেটাবেজ থেকে) ---
   const uniqueCCs = Array.from(new Set(bikes.map(b => b.engineCC).filter(Boolean))).sort((a, b) => Number(a) - Number(b));
   const uniqueColors = Array.from(new Set(bikes.map(b => b.color).filter(Boolean)));
   const uniqueConditions = Array.from(new Set(bikes.map(b => b.condition).filter(Boolean)));
@@ -83,7 +82,7 @@ export default function POSPage() {
     let customerPhone = '';
     let customerAddress = '';
     let customerEmail = '';
-
+    filteredBikes.length > 0
     const c = customers.find((c) => c.id === finalCustomerId);
     if (c) {
       customerName = c.name;
@@ -170,7 +169,6 @@ export default function POSPage() {
             <Input placeholder="Search bikes by name or model..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
           </div>
 
-          {/* ফিল্টার UI সেকশন - ৫টি ফিল্টারই ডাইনামিক */}
           <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
             <div className="space-y-1">
               <Label className="text-[10px] uppercase font-bold text-muted-foreground">ABS</Label>
